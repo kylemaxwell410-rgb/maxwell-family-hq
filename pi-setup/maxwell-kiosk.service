@@ -1,0 +1,31 @@
+# ~/.config/systemd/user/maxwell-kiosk.service
+# User-level service that launches Chromium in kiosk mode after the desktop starts.
+# Enable with:  systemctl --user enable --now maxwell-kiosk.service
+# (Requires `loginctl enable-linger kyle` so it survives across sessions.)
+
+[Unit]
+Description=Maxwell HQ Chromium kiosk
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+# Wait for the API+Vite to actually be up before pointing Chromium at it.
+ExecStartPre=/bin/bash -c 'until curl -sf http://localhost:5173 >/dev/null; do sleep 1; done'
+ExecStart=/usr/bin/chromium-browser \
+  --kiosk \
+  --app=http://localhost:5173 \
+  --noerrdialogs \
+  --disable-infobars \
+  --disable-translate \
+  --disable-features=TranslateUI \
+  --overscroll-history-navigation=0 \
+  --check-for-update-interval=31536000 \
+  --no-first-run \
+  --start-fullscreen \
+  --user-data-dir=/home/kyle/.maxwell-chromium
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

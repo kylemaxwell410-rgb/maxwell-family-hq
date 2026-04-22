@@ -1,0 +1,12 @@
+{
+  "name": "maxwell-family-hq",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local-first wall-mounted family dashboard for the Maxwells",
+  "scripts": {
+    "install:all": "cd server && npm install && cd ../client && npm install",
+    "server": "cd server && npm start",
+    "client": "cd client && npm run dev",
+    "start": "bash start-all.sh"
+  }
+}

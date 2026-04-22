@@ -1,0 +1,5 @@
+# /etc/cron.d/maxwell-hq-reboot
+# Reboot the Pi every night at 3:00 AM for memory / long-running-process stability.
+# Install with:  sudo cp pi-setup/nightly-reboot /etc/cron.d/maxwell-hq-reboot
+
+0 3 * * * root /sbin/shutdown -r now

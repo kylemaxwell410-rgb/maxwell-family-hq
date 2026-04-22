@@ -1,0 +1,12 @@
+node_modules/
+server/data.db
+server/data.db-journal
+server/data.db-wal
+server/data.db-shm
+server/data*.db*
+.env
+.env.local
+dist/
+.DS_Store
+*.log
+.claude/

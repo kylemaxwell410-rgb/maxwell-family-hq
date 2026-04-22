@@ -1,0 +1,13 @@
+# Drop-in autostart for Raspberry Pi OS (X11 / LXDE-pi).
+# Copy to: ~/.config/lxsession/LXDE-pi/autostart
+#
+# Disables screen blanking, hides the mouse cursor after 0.1s idle, and
+# launches Chromium in kiosk mode pointed at the local app.
+# On Pi OS Bookworm with Wayland (labwc), prefer the user systemd service
+# at ~/.config/systemd/user/maxwell-kiosk.service instead.
+
+@xset s off
+@xset -dpms
+@xset s noblank
+@unclutter -idle 0.1 -root
+@bash -c 'until curl -sf http://localhost:5173 >/dev/null; do sleep 1; done; chromium-browser --kiosk --app=http://localhost:5173 --noerrdialogs --disable-infobars --no-first-run'

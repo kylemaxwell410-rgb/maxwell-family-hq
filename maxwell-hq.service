@@ -1,0 +1,24 @@
+# /etc/systemd/system/maxwell-hq.service
+# Runs the API + Vite dev server for Maxwell Family HQ.
+# Edit User= and the two WorkingDirectory paths if you didn't clone to /home/kyle/maxwell-family-hq.
+
+[Unit]
+Description=Maxwell Family HQ (server + client)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kyle
+WorkingDirectory=/home/kyle/maxwell-family-hq
+ExecStart=/bin/bash /home/kyle/maxwell-family-hq/start-all.sh
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+Environment=NODE_ENV=production
+# Override the default admin PIN here if you want:
+# Environment=ADMIN_PIN=4821
+
+[Install]
+WantedBy=multi-user.target

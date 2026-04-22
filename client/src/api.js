@@ -1,0 +1,80 @@
+const BASE = '/api';
+
+async function req(path, opts = {}) {
+  const res = await fetch(BASE + path, {
+    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+    ...opts,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || 'Request failed');
+  }
+  return res.json();
+}
+
+export const api = {
+  // kids
+  kids: () => req('/kids'),
+
+  // chores
+  chores: (date) => req(`/chores${date ? `?date=${date}` : ''}`),
+  completeChore: (id, date) => req(`/chores/${id}/complete`, {
+    method: 'POST', body: JSON.stringify({ date }),
+  }),
+  uncompleteChore: (id, date) => req(`/chores/${id}/uncomplete`, {
+    method: 'POST', body: JSON.stringify({ date }),
+  }),
+
+  // events
+  events: (from, to) => {
+    const q = from && to ? `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}` : '';
+    return req(`/events${q}`);
+  },
+  createEvent: (body) => req('/events', { method: 'POST', body: JSON.stringify(body) }),
+  updateEvent: (id, body) => req(`/events/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  deleteEvent: (id) => req(`/events/${id}`, { method: 'DELETE' }),
+
+  // meals
+  meals: (from, to) => req(`/meals?from=${from}&to=${to}`),
+  upsertMeal: (body) => req('/meals', { method: 'PUT', body: JSON.stringify(body) }),
+
+  // shopping
+  shopping: () => req('/shopping'),
+  addShopping: (body) => req('/shopping', { method: 'POST', body: JSON.stringify(body) }),
+  patchShopping: (id, body) => req(`/shopping/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deleteShopping: (id) => req(`/shopping/${id}`, { method: 'DELETE' }),
+  clearChecked: () => req('/shopping/clear-checked', { method: 'POST' }),
+
+  // points
+  rewards: () => req('/points/rewards'),
+  transactions: (kidId) => req(`/points/transactions${kidId ? `?kid_id=${kidId}` : ''}`),
+  redeem: (kid_id, reward_id) => req('/points/redeem', {
+    method: 'POST', body: JSON.stringify({ kid_id, reward_id }),
+  }),
+  adjust: (kid_id, amount, reason) => req('/points/adjust', {
+    method: 'POST', body: JSON.stringify({ kid_id, amount, reason }),
+  }),
+
+  // admin
+  verifyPin: (pin) => req('/admin/verify', { method: 'POST', body: JSON.stringify({ pin }) }),
+  adminChores: (pin) => req('/admin/chores', { headers: { 'x-admin-pin': pin } }),
+  createChore: (pin, body) => req('/admin/chores', {
+    method: 'POST', headers: { 'x-admin-pin': pin }, body: JSON.stringify(body),
+  }),
+  updateChore: (pin, id, body) => req(`/admin/chores/${id}`, {
+    method: 'PUT', headers: { 'x-admin-pin': pin }, body: JSON.stringify(body),
+  }),
+  deleteChore: (pin, id) => req(`/admin/chores/${id}`, {
+    method: 'DELETE', headers: { 'x-admin-pin': pin },
+  }),
+  updateKid: (pin, id, body) => req(`/admin/kids/${id}`, {
+    method: 'PUT', headers: { 'x-admin-pin': pin }, body: JSON.stringify(body),
+  }),
+};
+
+export function todayStr(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
