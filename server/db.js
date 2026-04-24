@@ -115,13 +115,23 @@ export function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_meals_date ON meals(meal_date);
     CREATE INDEX IF NOT EXISTS idx_txn_kid ON point_transactions(kid_id);
   `);
+
+  // Idempotent migration: add role column if it doesn't exist.
+  try {
+    db.prepare('SELECT role FROM kids LIMIT 1').get();
+  } catch {
+    db.exec("ALTER TABLE kids ADD COLUMN role TEXT NOT NULL DEFAULT 'kid'");
+    console.log('[db] added role column to kids');
+  }
 }
 
 const SEED_KIDS = [
-  { id: 'kolt',        name: 'Kolt',        initials: 'K',  color: '#185FA5', sort_order: 1 },
-  { id: 'michaelann',  name: 'Michael-ann', initials: 'MA', color: '#993556', sort_order: 2 },
-  { id: 'emma',        name: 'Emma',        initials: 'E',  color: '#534AB7', sort_order: 3 },
-  { id: 'preston',     name: 'Preston',     initials: 'P',  color: '#0F6E56', sort_order: 4 },
+  { id: 'kolt',        name: 'Kolt',        initials: 'K',  color: '#C43E3E', sort_order: 1, role: 'kid'    },
+  { id: 'michaelann',  name: 'Michael-ann', initials: 'MA', color: '#993556', sort_order: 2, role: 'kid'    },
+  { id: 'emma',        name: 'Emma',        initials: 'E',  color: '#534AB7', sort_order: 3, role: 'kid'    },
+  { id: 'preston',     name: 'Preston',     initials: 'P',  color: '#185FA5', sort_order: 4, role: 'kid'    },
+  { id: 'mom',         name: 'Mom',         initials: 'M',  color: '#0F6E56', sort_order: 5, role: 'parent' },
+  { id: 'dad',         name: 'Dad',         initials: 'D',  color: '#6B7280', sort_order: 6, role: 'parent' },
 ];
 
 const SEED_CHORES = {
@@ -152,27 +162,72 @@ const SEED_CHORES = {
 
 export function seedIfEmpty() {
   const row = db.prepare('SELECT COUNT(*) AS c FROM kids').get();
-  if (row.c > 0) return;
+  const empty = row.c === 0;
 
   const insertKid = db.prepare(
-    'INSERT INTO kids (id, name, initials, color, sort_order, points_balance) VALUES (?, ?, ?, ?, ?, 0)'
+    'INSERT INTO kids (id, name, initials, color, sort_order, points_balance, role) VALUES (?, ?, ?, ?, ?, 0, ?)'
   );
   const insertChore = db.prepare(
     `INSERT INTO chores (id, kid_id, title, points, frequency, days_of_week, active, sort_order)
      VALUES (?, ?, ?, ?, 'daily', '0,1,2,3,4,5,6', 1, ?)`
   );
 
+  if (empty) {
+    const tx = db.transaction(() => {
+      for (const k of SEED_KIDS) {
+        insertKid.run(k.id, k.name, k.initials, k.color, k.sort_order, k.role);
+        const chores = SEED_CHORES[k.id] || [];
+        chores.forEach((c, i) => {
+          insertChore.run(nanoid(), k.id, c.title, c.points, i + 1);
+        });
+      }
+    });
+    tx();
+    console.log('[db] Seeded', SEED_KIDS.length, 'family members and starter chores');
+    return;
+  }
+
+  // Non-empty DB: add any seed members who don't exist yet (e.g. Mom/Dad on an older install).
+  const existing = new Set(
+    db.prepare('SELECT id FROM kids').all().map(r => r.id)
+  );
+  const missing = SEED_KIDS.filter(k => !existing.has(k.id));
+  if (missing.length > 0) {
+    const tx = db.transaction(() => {
+      for (const k of missing) {
+        insertKid.run(k.id, k.name, k.initials, k.color, k.sort_order, k.role);
+      }
+    });
+    tx();
+    console.log('[db] Added new family members:', missing.map(m => m.name).join(', '));
+  }
+}
+
+// Re-apply the seed colors on every boot so color adjustments ship via git.
+// Only runs for seeded people (by id); user-added family members are untouched.
+// Respects admin edits: only updates if the color is still the *previous* seeded color
+// (tracked via this table of historical defaults), so a user override via Admin sticks.
+const PREVIOUS_COLORS = {
+  kolt:    ['#185FA5'],                         // was blue, now red
+  preston: ['#0F6E56'],                         // was teal, now blue
+};
+
+export function applySeedColorUpdates() {
+  const getColor = db.prepare('SELECT color FROM kids WHERE id = ?');
+  const update   = db.prepare('UPDATE kids SET color = ? WHERE id = ?');
   const tx = db.transaction(() => {
     for (const k of SEED_KIDS) {
-      insertKid.run(k.id, k.name, k.initials, k.color, k.sort_order);
-      const chores = SEED_CHORES[k.id] || [];
-      chores.forEach((c, i) => {
-        insertChore.run(nanoid(), k.id, c.title, c.points, i + 1);
-      });
+      const row = getColor.get(k.id);
+      if (!row) continue;
+      const prev = PREVIOUS_COLORS[k.id] || [];
+      // Update only if the current color is a known-old default (so custom admin colors stay).
+      if (row.color !== k.color && prev.includes(row.color)) {
+        update.run(k.color, k.id);
+        console.log(`[db] recolored ${k.id}: ${row.color} → ${k.color}`);
+      }
     }
   });
   tx();
-  console.log('[db] Seeded 4 kids and starter chores');
 }
 
 export { nanoid };

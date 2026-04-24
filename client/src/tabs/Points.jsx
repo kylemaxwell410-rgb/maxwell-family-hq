@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 
-export default function Points({ kids, onKidsChange }) {
+export default function Points({ kids: allKids, onKidsChange }) {
+  const kids = allKids.filter(k => k.role !== 'parent');
   const [rewards, setRewards] = useState([]);
   const [txns, setTxns] = useState([]);
   const [selectedKid, setSelectedKid] = useState(null);
@@ -53,13 +54,13 @@ export default function Points({ kids, onKidsChange }) {
             <h3 className="font-bold text-lg">Rewards</h3>
             {selectedKid && (
               <div className="text-sm text-slate-400">
-                Redeeming for <span className="font-semibold">{kids.find(k => k.id === selectedKid)?.name}</span>
+                Redeeming for <span className="font-semibold">{allKids.find(k => k.id === selectedKid)?.name}</span>
               </div>
             )}
           </div>
           <div className="grid grid-cols-3 gap-3 p-4 overflow-auto">
             {rewards.map(r => {
-              const kid = kids.find(k => k.id === selectedKid);
+              const kid = allKids.find(k => k.id === selectedKid);
               const canAfford = kid && kid.points_balance >= r.cost;
               const disabled = !kid || !canAfford;
               return (
@@ -91,7 +92,7 @@ export default function Points({ kids, onKidsChange }) {
         <div className="p-4 border-b border-white/5">
           <h3 className="font-bold text-lg">Transactions</h3>
           <p className="text-xs text-slate-400">
-            {selectedKid ? kids.find(k => k.id === selectedKid)?.name : 'All kids'}
+            {selectedKid ? allKids.find(k => k.id === selectedKid)?.name : 'All kids'}
           </p>
         </div>
         <div className="flex-1 overflow-auto divide-y divide-white/5">
@@ -99,7 +100,7 @@ export default function Points({ kids, onKidsChange }) {
             <div className="p-6 text-center text-slate-500 text-sm">No transactions yet</div>
           )}
           {visibleTxns.map(t => {
-            const kid = kids.find(k => k.id === t.kid_id);
+            const kid = allKids.find(k => k.id === t.kid_id);
             return (
               <div key={t.id} className="p-3 flex items-center gap-3">
                 <div className="w-2 h-10 rounded-full" style={{ background: kid?.color || '#334155' }} />
@@ -127,7 +128,7 @@ export default function Points({ kids, onKidsChange }) {
               Spend <span className="font-bold text-white">{confirming.cost} points</span> for <span className="font-bold text-white">{confirming.label}</span>.
             </p>
             <div className="flex gap-2">
-              <button onClick={() => redeem(kids.find(k => k.id === selectedKid), confirming)}
+              <button onClick={() => redeem(allKids.find(k => k.id === selectedKid), confirming)}
                 className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold tap">Confirm</button>
               <button onClick={() => setConfirming(null)}
                 className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold tap">Cancel</button>

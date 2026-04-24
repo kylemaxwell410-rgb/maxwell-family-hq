@@ -93,15 +93,20 @@ export default function Admin({ kids, onKidsChange }) {
 
         {section === 'kids' && (
           <>
-            <div className="p-4 border-b border-white/5"><h2 className="text-xl font-bold">Kids</h2></div>
-            <div className="p-4 grid grid-cols-2 gap-3 overflow-auto">
+            <div className="p-4 border-b border-white/5"><h2 className="text-xl font-bold">Family</h2></div>
+            <div className="p-4 grid grid-cols-3 gap-3 overflow-auto">
               {kids.map(k => (
                 <button key={k.id} onClick={() => setEditing({ _type:'kid', ...k })}
                   className="p-4 rounded-xl hover:bg-white/5 tap text-left border border-white/5"
                   style={{ background: k.color + '22' }}>
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{ background: k.color }}>{k.initials}</div>
-                    <div className="font-bold">{k.name}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold truncate">{k.name}</div>
+                      <div className="text-[10px] uppercase tracking-wide text-slate-400">
+                        {k.role === 'parent' ? 'Parent' : 'Kid'}
+                      </div>
+                    </div>
                   </div>
                   <div className="text-xs text-slate-400">{k.color} · order {k.sort_order}</div>
                 </button>
@@ -114,13 +119,16 @@ export default function Admin({ kids, onKidsChange }) {
           <>
             <div className="p-4 border-b border-white/5 flex justify-between items-center">
               <h2 className="text-xl font-bold">Manual adjustment</h2>
-              <button onClick={() => setAdjust({ kid_id: kids[0]?.id || '', amount: '', reason: '' })}
+              <button onClick={() => {
+                const first = kids.find(k => k.role !== 'parent');
+                setAdjust({ kid_id: first?.id || '', amount: '', reason: '' });
+              }}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold tap">
                 + Adjust
               </button>
             </div>
             <div className="p-4 grid grid-cols-2 gap-3">
-              {kids.map(k => (
+              {kids.filter(k => k.role !== 'parent').map(k => (
                 <div key={k.id} className="p-4 rounded-xl border border-white/5" style={{ background: k.color + '22' }}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{ background: k.color }}>{k.initials}</div>
@@ -221,13 +229,31 @@ function ChoreModal({ chore, kids, onSave, onDelete, onClose }) {
 }
 
 function KidModal({ kid, onSave, onClose }) {
-  const [f, setF] = useState({ name: kid.name, initials: kid.initials, color: kid.color, sort_order: kid.sort_order });
+  const [f, setF] = useState({
+    name: kid.name,
+    initials: kid.initials,
+    color: kid.color,
+    sort_order: kid.sort_order,
+    role: kid.role || 'kid',
+  });
   return (
     <Modal>
-      <h3 className="text-xl font-bold mb-4">Edit kid</h3>
+      <h3 className="text-xl font-bold mb-4">Edit {f.role === 'parent' ? 'parent' : 'kid'}</h3>
       <div className="space-y-3">
         <FieldRow label="Name"><input className="input" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></FieldRow>
         <FieldRow label="Initials"><input className="input" value={f.initials} onChange={e => setF({ ...f, initials: e.target.value })} /></FieldRow>
+        <FieldRow label="Role">
+          <div className="flex gap-2">
+            {['kid','parent'].map(r => (
+              <button key={r} type="button"
+                onClick={() => setF({ ...f, role: r })}
+                className={`flex-1 py-2 rounded-lg capitalize tap border
+                  ${f.role === r ? 'bg-white/10 border-white/25 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'}`}>
+                {r}
+              </button>
+            ))}
+          </div>
+        </FieldRow>
         <FieldRow label="Color (hex)">
           <div className="flex gap-2">
             <input type="color" value={f.color} onChange={e => setF({ ...f, color: e.target.value })}

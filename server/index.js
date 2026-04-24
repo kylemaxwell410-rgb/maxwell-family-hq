@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { initSchema, seedIfEmpty } from './db.js';
+import { initSchema, seedIfEmpty, applySeedColorUpdates } from './db.js';
 import kidsRouter from './routes/kids.js';
 import choresRouter from './routes/chores.js';
 import eventsRouter from './routes/events.js';
@@ -11,6 +11,7 @@ import adminRouter from './routes/admin.js';
 
 initSchema();
 seedIfEmpty();
+applySeedColorUpdates();
 
 const app = express();
 app.use(cors());
