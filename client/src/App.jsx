@@ -37,7 +37,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#0b0f14] text-slate-100 overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-slate-50 text-slate-900 overflow-hidden">
       <Header />
       <TabNav tabs={TABS} current={tab} onChange={setTab} />
       <main className="flex-1 overflow-hidden">

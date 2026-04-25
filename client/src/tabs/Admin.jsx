@@ -52,39 +52,39 @@ export default function Admin({ kids, onKidsChange }) {
         {['chores','kids','points'].map(s => (
           <button key={s} onClick={() => setSection(s)}
             className={`px-4 py-3 rounded-xl font-semibold capitalize text-left tap
-              ${section === s ? 'bg-white/10' : 'hover:bg-white/5 text-slate-400'}`}>
+              ${section === s ? 'bg-slate-900 text-white' : 'hover:bg-slate-100 text-slate-600'}`}>
             {s}
           </button>
         ))}
         <button onClick={() => setPin(null)}
-          className="mt-auto px-4 py-3 rounded-xl font-semibold text-left text-rose-400 hover:bg-white/5 tap">
+          className="mt-auto px-4 py-3 rounded-xl font-semibold text-left text-rose-600 hover:bg-rose-50 tap">
           Lock
         </button>
       </nav>
 
-      <section className="flex-1 bg-[#111923] border border-white/5 rounded-2xl overflow-hidden flex flex-col">
+      <section className="flex-1 bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col">
         {section === 'chores' && (
           <>
-            <div className="p-4 border-b border-white/5 flex justify-between items-center">
-              <h2 className="text-xl font-bold">All chores</h2>
+            <div className="p-4 border-b border-slate-200 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-slate-900">All chores</h2>
               <button onClick={() => setEditing({
                 _type: 'chore', kid_id: kids[0]?.id || '', title: '', points: 1,
                 frequency: 'daily', days_of_week: '0,1,2,3,4,5,6', active: 1, sort_order: 0,
               })}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold tap">
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold tap">
                 + New chore
               </button>
             </div>
-            <div className="flex-1 overflow-auto divide-y divide-white/5">
+            <div className="flex-1 overflow-auto divide-y divide-slate-100">
               {chores.map(c => (
                 <button key={c.id} onClick={() => setEditing({ _type:'chore', ...c })}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-white/5 tap text-left">
+                  className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 tap text-left">
                   <div className="w-2 h-10 rounded-full" style={{ background: c.kid_color }} />
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold truncate">{c.title}</div>
-                    <div className="text-xs text-slate-400">{c.kid_name} · {c.active ? 'Active' : 'Inactive'} · {daysLabel(c.days_of_week)}</div>
+                    <div className="font-semibold truncate text-slate-900">{c.title}</div>
+                    <div className="text-xs text-slate-500">{c.kid_name} · {c.active ? 'Active' : 'Inactive'} · {daysLabel(c.days_of_week)}</div>
                   </div>
-                  <div className="font-bold text-lg tabular-nums">+{c.points}</div>
+                  <div className="font-bold text-lg tabular-nums text-slate-900">+{c.points}</div>
                 </button>
               ))}
             </div>
@@ -93,22 +93,22 @@ export default function Admin({ kids, onKidsChange }) {
 
         {section === 'kids' && (
           <>
-            <div className="p-4 border-b border-white/5"><h2 className="text-xl font-bold">Family</h2></div>
+            <div className="p-4 border-b border-slate-200"><h2 className="text-xl font-bold text-slate-900">Family</h2></div>
             <div className="p-4 grid grid-cols-3 gap-3 overflow-auto">
               {kids.map(k => (
                 <button key={k.id} onClick={() => setEditing({ _type:'kid', ...k })}
-                  className="p-4 rounded-xl hover:bg-white/5 tap text-left border border-white/5"
-                  style={{ background: k.color + '22' }}>
+                  className="p-4 rounded-xl hover:shadow-sm tap text-left border border-slate-200"
+                  style={{ background: k.color + '14' }}>
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{ background: k.color }}>{k.initials}</div>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white" style={{ background: k.color }}>{k.initials}</div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold truncate">{k.name}</div>
-                      <div className="text-[10px] uppercase tracking-wide text-slate-400">
+                      <div className="font-bold truncate text-slate-900">{k.name}</div>
+                      <div className="text-[10px] uppercase tracking-wide text-slate-500">
                         {k.role === 'parent' ? 'Parent' : 'Kid'}
                       </div>
                     </div>
                   </div>
-                  <div className="text-xs text-slate-400">{k.color} · order {k.sort_order}</div>
+                  <div className="text-xs text-slate-500">{k.color} · order {k.sort_order}</div>
                 </button>
               ))}
             </div>
@@ -117,24 +117,24 @@ export default function Admin({ kids, onKidsChange }) {
 
         {section === 'points' && (
           <>
-            <div className="p-4 border-b border-white/5 flex justify-between items-center">
-              <h2 className="text-xl font-bold">Manual adjustment</h2>
+            <div className="p-4 border-b border-slate-200 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-slate-900">Manual adjustment</h2>
               <button onClick={() => {
                 const first = kids.find(k => k.role !== 'parent');
                 setAdjust({ kid_id: first?.id || '', amount: '', reason: '' });
               }}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold tap">
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold tap">
                 + Adjust
               </button>
             </div>
             <div className="p-4 grid grid-cols-2 gap-3">
               {kids.filter(k => k.role !== 'parent').map(k => (
-                <div key={k.id} className="p-4 rounded-xl border border-white/5" style={{ background: k.color + '22' }}>
+                <div key={k.id} className="p-4 rounded-xl border border-slate-200" style={{ background: k.color + '14' }}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{ background: k.color }}>{k.initials}</div>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white" style={{ background: k.color }}>{k.initials}</div>
                     <div>
-                      <div className="font-bold">{k.name}</div>
-                      <div className="text-2xl font-extrabold tabular-nums">{k.points_balance}</div>
+                      <div className="font-bold text-slate-900">{k.name}</div>
+                      <div className="text-2xl font-extrabold tabular-nums text-slate-900">{k.points_balance}</div>
                     </div>
                   </div>
                 </div>
@@ -180,7 +180,7 @@ function ChoreModal({ chore, kids, onSave, onDelete, onClose }) {
   }
   return (
     <Modal>
-      <h3 className="text-xl font-bold mb-4">{chore.id ? 'Edit chore' : 'New chore'}</h3>
+      <h3 className="text-xl font-bold mb-4 text-slate-900">{chore.id ? 'Edit chore' : 'New chore'}</h3>
       <div className="space-y-3">
         <FieldRow label="Kid">
           <select className="input" value={f.kid_id} onChange={e => setF({ ...f, kid_id: e.target.value })}>
@@ -205,24 +205,24 @@ function ChoreModal({ chore, kids, onSave, onDelete, onClose }) {
             {DOW.map((d, i) => (
               <button key={i} onClick={() => toggleDay(i)}
                 className={`w-11 h-11 rounded-lg font-bold tap
-                  ${daySet.has(i) ? 'bg-emerald-600' : 'bg-white/5 hover:bg-white/10'}`}>{d}</button>
+                  ${daySet.has(i) ? 'bg-emerald-600 text-white' : 'bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700'}`}>{d}</button>
             ))}
           </div>
         </FieldRow>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm text-slate-700">
           <input type="checkbox" checked={!!f.active} onChange={e => setF({ ...f, active: e.target.checked ? 1 : 0 })} />
           Active
         </label>
       </div>
       <div className="flex gap-2 mt-6">
         <button onClick={() => onSave({ ...chore, ...f })}
-          className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold tap">Save</button>
+          className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold tap">Save</button>
         {onDelete && (
           <button onClick={onDelete}
-            className="px-6 py-3 bg-rose-700 hover:bg-rose-600 rounded-xl font-semibold tap">Delete</button>
+            className="px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-semibold tap">Delete</button>
         )}
         <button onClick={onClose}
-          className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold tap">Cancel</button>
+          className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold tap">Cancel</button>
       </div>
     </Modal>
   );
@@ -238,7 +238,7 @@ function KidModal({ kid, onSave, onClose }) {
   });
   return (
     <Modal>
-      <h3 className="text-xl font-bold mb-4">Edit {f.role === 'parent' ? 'parent' : 'kid'}</h3>
+      <h3 className="text-xl font-bold mb-4 text-slate-900">Edit {f.role === 'parent' ? 'parent' : 'kid'}</h3>
       <div className="space-y-3">
         <FieldRow label="Name"><input className="input" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></FieldRow>
         <FieldRow label="Initials"><input className="input" value={f.initials} onChange={e => setF({ ...f, initials: e.target.value })} /></FieldRow>
@@ -248,7 +248,7 @@ function KidModal({ kid, onSave, onClose }) {
               <button key={r} type="button"
                 onClick={() => setF({ ...f, role: r })}
                 className={`flex-1 py-2 rounded-lg capitalize tap border
-                  ${f.role === r ? 'bg-white/10 border-white/25 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'}`}>
+                  ${f.role === r ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-slate-600 hover:bg-slate-100'}`}>
                 {r}
               </button>
             ))}
@@ -257,7 +257,7 @@ function KidModal({ kid, onSave, onClose }) {
         <FieldRow label="Color (hex)">
           <div className="flex gap-2">
             <input type="color" value={f.color} onChange={e => setF({ ...f, color: e.target.value })}
-              className="h-11 w-16 bg-transparent border border-white/10 rounded-lg" />
+              className="h-11 w-16 bg-white border border-slate-200 rounded-lg" />
             <input className="input flex-1" value={f.color} onChange={e => setF({ ...f, color: e.target.value })} />
           </div>
         </FieldRow>
@@ -268,9 +268,9 @@ function KidModal({ kid, onSave, onClose }) {
       </div>
       <div className="flex gap-2 mt-6">
         <button onClick={() => onSave({ ...kid, ...f })}
-          className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold tap">Save</button>
+          className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold tap">Save</button>
         <button onClick={onClose}
-          className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold tap">Cancel</button>
+          className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold tap">Cancel</button>
       </div>
     </Modal>
   );
@@ -279,7 +279,7 @@ function KidModal({ kid, onSave, onClose }) {
 function AdjustModal({ kids, adjust, setAdjust, onSubmit, onClose }) {
   return (
     <Modal>
-      <h3 className="text-xl font-bold mb-4">Point adjustment</h3>
+      <h3 className="text-xl font-bold mb-4 text-slate-900">Point adjustment</h3>
       <div className="space-y-3">
         <FieldRow label="Kid">
           <select className="input" value={adjust.kid_id}
@@ -298,9 +298,9 @@ function AdjustModal({ kids, adjust, setAdjust, onSubmit, onClose }) {
       </div>
       <div className="flex gap-2 mt-6">
         <button onClick={onSubmit}
-          className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold tap">Apply</button>
+          className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold tap">Apply</button>
         <button onClick={onClose}
-          className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold tap">Cancel</button>
+          className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold tap">Cancel</button>
       </div>
     </Modal>
   );
@@ -308,11 +308,11 @@ function AdjustModal({ kids, adjust, setAdjust, onSubmit, onClose }) {
 
 function Modal({ children }) {
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="bg-[#111923] border border-white/10 rounded-2xl p-6 w-[520px] max-h-[90vh] overflow-auto">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 w-[520px] max-h-[90vh] overflow-auto shadow-xl">
         {children}
       </div>
-      <style>{`.input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;color:#e6edf3;font-size:15px;min-height:44px}`}</style>
+      <style>{`.input{width:100%;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;color:#0f172a;font-size:15px;min-height:44px}.input:focus{outline:none;border-color:#0f172a}`}</style>
     </div>
   );
 }
@@ -320,7 +320,7 @@ function Modal({ children }) {
 function FieldRow({ label, children }) {
   return (
     <div>
-      <label className="block text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">{label}</label>
+      <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">{label}</label>
       {children}
     </div>
   );

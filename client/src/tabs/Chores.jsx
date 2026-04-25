@@ -59,12 +59,12 @@ export default function Chores({ kids, onKidsChange }) {
   }, [events, kids]);
 
   if (loading && !chores.length) {
-    return <div className="p-8 text-slate-400">Loading chores…</div>;
+    return <div className="p-8 text-slate-500">Loading chores…</div>;
   }
 
   return (
-    <div className="h-full overflow-auto p-5">
-      <div className="grid grid-cols-3 grid-rows-2 gap-4 h-full">
+    <div className="h-full overflow-auto p-4">
+      <div className="grid grid-cols-6 grid-rows-1 gap-3 h-full">
         {kids.map(kid => {
           const list = byKid[kid.id] || [];
           const done = list.filter(c => c.completed).length;
@@ -80,40 +80,39 @@ export default function Chores({ kids, onKidsChange }) {
 
           return (
             <div key={kid.id}
-              className={`flex flex-col rounded-2xl border overflow-hidden transition
-                ${allDone ? 'border-white/20' : 'border-white/5'}
-                bg-[#111923]`}
+              className={`flex flex-col rounded-2xl border overflow-hidden transition bg-white
+                ${allDone ? 'border-slate-300 shadow-sm' : 'border-slate-200'}`}
               style={{ boxShadow: `inset 0 3px 0 0 ${kid.color}` }}>
               {/* Header */}
-              <div className="px-4 pt-3 pb-2 flex items-center justify-between"
-                style={{ background: `linear-gradient(180deg, ${kid.color}33 0%, transparent 100%)` }}>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
+              <div className="px-3 pt-3 pb-2 flex items-center justify-between gap-2"
+                style={{ background: `linear-gradient(180deg, ${kid.color}1f 0%, transparent 100%)` }}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
                     style={{ background: kid.color }}>
                     {kid.initials}
                   </div>
-                  <div>
-                    <div className="text-lg font-bold leading-tight">{kid.name}</div>
-                    <div className="text-[11px] text-slate-400 leading-tight">
+                  <div className="min-w-0">
+                    <div className="text-base font-bold leading-tight text-slate-900 truncate">{kid.name}</div>
+                    <div className="text-[10px] text-slate-500 leading-tight">
                       {total === 0 ? 'No chores today' : `${done}/${total} done${isParent ? '' : ` · ${earnedPoints}/${possiblePoints} pts`}`}
                     </div>
                   </div>
                 </div>
                 {!isParent && (
-                  <div className="text-right">
-                    <div className="text-[10px] text-slate-400 uppercase tracking-wide leading-none">Balance</div>
-                    <div className="text-2xl font-bold tabular-nums leading-tight">{kid.points_balance}</div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-[9px] text-slate-500 uppercase tracking-wide leading-none">Bal</div>
+                    <div className="text-xl font-bold tabular-nums leading-tight text-slate-900">{kid.points_balance}</div>
                   </div>
                 )}
               </div>
 
               {/* Body: either the chore list OR the free-time panel */}
-              <div className="flex-1 p-3 overflow-auto">
+              <div className="flex-1 p-2 overflow-auto">
                 {allDone ? (
                   <FreeTimeCard person={kid} events={personalEvents} />
                 ) : list.length === 0 ? (
-                  <div className="text-slate-500 text-center py-6 text-sm">
-                    No chores scheduled today
+                  <div className="text-slate-400 text-center py-6 text-xs">
+                    No chores today
                   </div>
                 ) : (
                   <div className="space-y-1.5">
@@ -121,13 +120,13 @@ export default function Chores({ kids, onKidsChange }) {
                       <button
                         key={c.id}
                         onClick={() => toggle(c)}
-                        className={`w-full flex items-center gap-2.5 p-2.5 rounded-xl transition tap text-left
+                        className={`w-full flex items-center gap-2 p-2 rounded-xl transition tap text-left
                           ${c.completed
-                            ? 'bg-white/5 text-slate-500 line-through'
-                            : 'bg-white/5 hover:bg-white/10'}`}
+                            ? 'bg-slate-100 text-slate-400 line-through'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-900'}`}
                       >
-                        <div className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center flex-shrink-0
-                          ${c.completed ? 'border-transparent' : 'border-white/20'}`}
+                        <div className={`w-9 h-9 rounded-lg border-2 flex items-center justify-center flex-shrink-0
+                          ${c.completed ? 'border-transparent' : 'border-slate-300'}`}
                           style={c.completed ? { background: kid.color } : {}}>
                           {c.completed && (
                             <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="white" strokeWidth="3">
@@ -136,11 +135,14 @@ export default function Chores({ kids, onKidsChange }) {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-[15px] font-medium truncate">{c.title}</div>
+                          <div className="text-[13px] font-medium truncate">{c.title}</div>
                         </div>
                         {!isParent && (
-                          <div className="text-xs font-semibold px-2 py-0.5 rounded-md"
-                            style={{ background: kid.color + '33', color: c.completed ? '#64748b' : '#fff' }}>
+                          <div className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0"
+                            style={{
+                              background: kid.color + '22',
+                              color: c.completed ? '#94a3b8' : kid.color,
+                            }}>
                             +{c.points}
                           </div>
                         )}
@@ -167,11 +169,11 @@ function FreeTimeCard({ person, events }) {
   return (
     <div className="h-full flex flex-col">
       <div className="flex-shrink-0 py-2 text-center">
-        <div className="text-3xl mb-1">🎉</div>
-        <div className="text-base font-bold" style={{ color: person.color }}>
+        <div className="text-2xl mb-0.5">🎉</div>
+        <div className="text-sm font-bold" style={{ color: person.color }}>
           Free time!
         </div>
-        <div className="text-[11px] text-slate-400 uppercase tracking-wide">
+        <div className="text-[10px] text-slate-500 uppercase tracking-wide">
           All chores done
         </div>
       </div>
@@ -186,18 +188,18 @@ function FreeTimeCard({ person, events }) {
 function EventGroup({ label, events, color }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1 px-1">
+      <div className="text-[9px] uppercase tracking-wide text-slate-400 font-semibold mb-1 px-1">
         {label}
       </div>
       {events.length === 0 ? (
-        <div className="text-xs text-slate-600 px-1 italic">Nothing on the calendar</div>
+        <div className="text-[11px] text-slate-400 px-1 italic">Nothing</div>
       ) : (
         <div className="space-y-1">
           {events.map(e => (
-            <div key={e.id} className="flex gap-2 items-start bg-white/[0.03] rounded-md px-2 py-1.5">
+            <div key={e.id} className="flex gap-2 items-start bg-slate-50 rounded-md px-2 py-1.5 border border-slate-200">
               <div className="w-1 self-stretch rounded-full flex-shrink-0" style={{ background: color }} />
               <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-medium truncate">{e.title}</div>
+                <div className="text-[12px] font-medium truncate text-slate-800">{e.title}</div>
                 <div className="text-[10px] text-slate-500 tabular-nums">{fmtEventTime(e.start_datetime, e.all_day)}</div>
               </div>
             </div>

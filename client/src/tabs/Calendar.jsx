@@ -5,12 +5,15 @@ const VIEWS = [
   { id: 'today',    label: 'Today' },
   { id: 'tomorrow', label: 'Tomorrow' },
   { id: 'week',     label: 'Week' },
+  { id: 'month',    label: 'Month' },
 ];
 
 function startOfDay(d) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
 function endOfDay(d)   { const x = new Date(d); x.setHours(23,59,59,999); return x; }
 function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate()+n); return x; }
 function sameDay(a, b) { return startOfDay(a).getTime() === startOfDay(b).getTime(); }
+function startOfMonth(d) { const x = new Date(d); x.setDate(1); x.setHours(0,0,0,0); return x; }
+function endOfMonth(d)   { const x = startOfMonth(d); x.setMonth(x.getMonth()+1); x.setDate(0); x.setHours(23,59,59,999); return x; }
 
 function fmtTime(iso, allDay) {
   if (allDay) return 'All day';
@@ -42,7 +45,8 @@ export default function Calendar({ kids }) {
     const today = startOfDay(new Date());
     if (view === 'today')    return [today, endOfDay(today)];
     if (view === 'tomorrow') return [addDays(today, 1), endOfDay(addDays(today, 1))];
-    return [today, endOfDay(addDays(today, 6))];
+    if (view === 'week')     return [today, endOfDay(addDays(today, 6))];
+    return [startOfMonth(today), endOfMonth(today)];
   }, [view]);
 
   async function load() {
@@ -66,11 +70,9 @@ export default function Calendar({ kids }) {
 
   const visibleEvents = useMemo(() => {
     if (!filterKid) return events;
-    // Show this person's events + untagged "family" events.
     return events.filter(e => e.kid_id === filterKid || !e.kid_id);
   }, [events, filterKid]);
 
-  // Build a list of days in range, each with its events.
   const days = useMemo(() => {
     const [from, to] = range;
     const out = [];
@@ -99,7 +101,7 @@ export default function Calendar({ kids }) {
           {VIEWS.map(v => (
             <button key={v.id} onClick={() => setView(v.id)}
               className={`px-5 py-3 rounded-xl text-base font-semibold tap
-                ${view === v.id ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5'}`}>
+                ${view === v.id ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
               {v.label}
             </button>
           ))}
@@ -109,7 +111,7 @@ export default function Calendar({ kids }) {
           <button
             onClick={() => setFilterKid(null)}
             className={`px-4 py-2 rounded-full text-sm font-semibold tap transition
-              ${filterKid === null ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5'}`}>
+              ${filterKid === null ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
             Everyone
           </button>
           {kids.map(k => {
@@ -118,11 +120,11 @@ export default function Calendar({ kids }) {
               <button key={k.id} onClick={() => setFilterKid(on ? null : k.id)}
                 className="group flex items-center gap-2 tap"
                 title={k.name}>
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-bold border-2 transition
-                  ${on ? 'scale-110' : 'opacity-60 hover:opacity-100'}`}
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-bold border-2 transition text-white
+                  ${on ? 'scale-110' : 'opacity-70 hover:opacity-100'}`}
                   style={{
                     background: k.color,
-                    borderColor: on ? '#fff' : 'transparent',
+                    borderColor: on ? '#0f172a' : 'transparent',
                   }}>
                   {k.initials}
                 </div>
@@ -135,7 +137,7 @@ export default function Calendar({ kids }) {
           title: '', start_datetime: new Date().toISOString().slice(0,16),
           end_datetime: '', kid_id: '', notes: '', all_day: false,
         })}
-          className="px-6 py-3 bg-white/10 hover:bg-white/15 rounded-xl font-semibold tap">
+          className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold tap">
           + New event
         </button>
       </div>
@@ -143,22 +145,26 @@ export default function Calendar({ kids }) {
       {/* Agenda */}
       <div className="flex-1 overflow-auto pr-1">
         {days.every(d => d.events.length === 0) && (
-          <div className="text-slate-500 text-center py-20 text-lg">
+          <div className="text-slate-400 text-center py-20 text-lg">
             {filterKid ? `Nothing on ${kidMap[filterKid]?.name}'s calendar` : 'No events'}
           </div>
         )}
 
-        <div className="space-y-6">
-          {days.filter(d => view !== 'week' || d.events.length > 0).map(d => (
-            <DaySection
-              key={d.date.toISOString()}
-              date={d.date}
-              events={d.events}
-              kidMap={kidMap}
-              onEdit={setEditing}
-            />
-          ))}
-        </div>
+        {view === 'month' ? (
+          <MonthGrid days={days} kidMap={kidMap} onEdit={setEditing} />
+        ) : (
+          <div className="space-y-6">
+            {days.filter(d => view === 'today' || view === 'tomorrow' || d.events.length > 0).map(d => (
+              <DaySection
+                key={d.date.toISOString()}
+                date={d.date}
+                events={d.events}
+                kidMap={kidMap}
+                onEdit={setEditing}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {editing && (
@@ -178,18 +184,18 @@ function DaySection({ date, events, kidMap, onEdit }) {
   const isToday = sameDay(date, new Date());
   return (
     <section>
-      <div className="flex items-baseline gap-3 mb-3 pb-2 border-b border-white/10">
-        <h2 className={`text-2xl font-extrabold tracking-tight ${isToday ? 'text-white' : 'text-slate-300'}`}>
+      <div className="flex items-baseline gap-3 mb-3 pb-2 border-b border-slate-200">
+        <h2 className={`text-2xl font-extrabold tracking-tight ${isToday ? 'text-slate-900' : 'text-slate-700'}`}>
           {dayLabel(date)}
         </h2>
         <span className="text-slate-500 text-sm">{dateSubtitle(date)}</span>
-        <span className="ml-auto text-xs text-slate-500">
+        <span className="ml-auto text-xs text-slate-400">
           {events.length} {events.length === 1 ? 'event' : 'events'}
         </span>
       </div>
 
       {events.length === 0 ? (
-        <div className="text-slate-600 text-sm italic px-1">Nothing scheduled</div>
+        <div className="text-slate-400 text-sm italic px-1">Nothing scheduled</div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {events.map(e => (
@@ -202,33 +208,90 @@ function DaySection({ date, events, kidMap, onEdit }) {
 }
 
 function EventCard({ event, kid, onEdit }) {
-  const stripe = kid ? kid.color : '#334155';
-  const bg     = kid ? kid.color + '1a' : '#1e293b33';
+  const stripe = kid ? kid.color : '#94a3b8';
+  const bg     = kid ? kid.color + '14' : '#f1f5f9';
   return (
     <button
       onClick={() => onEdit(event)}
-      className="group text-left flex gap-3 rounded-2xl border border-white/5 p-4 tap hover:border-white/20 transition"
+      className="group text-left flex gap-3 rounded-2xl border border-slate-200 p-4 tap hover:border-slate-300 hover:shadow-sm transition"
       style={{ background: bg }}
     >
       <div className="w-1.5 self-stretch rounded-full" style={{ background: stripe }} />
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2 mb-0.5">
-          <div className="text-lg font-semibold truncate">{event.title}</div>
+          <div className="text-lg font-semibold truncate text-slate-900">{event.title}</div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-slate-300">
+        <div className="flex items-center gap-2 text-sm text-slate-700">
           <span className="tabular-nums font-medium">{fmtTime(event.start_datetime, event.all_day)}</span>
           {kid && (
             <>
-              <span className="text-slate-600">·</span>
-              <span className="font-medium" style={{ color: kid.color }}>{kid.name}</span>
+              <span className="text-slate-400">·</span>
+              <span className="font-semibold" style={{ color: kid.color }}>{kid.name}</span>
             </>
           )}
         </div>
         {event.notes && (
-          <div className="text-xs text-slate-400 mt-1.5 line-clamp-2">{event.notes}</div>
+          <div className="text-xs text-slate-500 mt-1.5 line-clamp-2">{event.notes}</div>
         )}
       </div>
     </button>
+  );
+}
+
+function MonthGrid({ days, kidMap, onEdit }) {
+  if (days.length === 0) return null;
+  const firstDate = days[0].date;
+  const monthName = firstDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  // Lead with empty cells for days of week before the 1st.
+  const leadingBlanks = firstDate.getDay();
+  const cells = [
+    ...Array.from({ length: leadingBlanks }, (_, i) => ({ blank: true, key: `b${i}` })),
+    ...days.map(d => ({ ...d, key: d.date.toISOString() })),
+  ];
+  const today = startOfDay(new Date());
+  const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  return (
+    <div>
+      <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 mb-3">{monthName}</h2>
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {dow.map(d => (
+          <div key={d} className="text-[11px] uppercase tracking-wide font-semibold text-slate-500 text-center">{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map(c => {
+          if (c.blank) return <div key={c.key} className="min-h-[88px]" />;
+          const isToday = sameDay(c.date, today);
+          return (
+            <div key={c.key}
+              className={`min-h-[88px] rounded-lg border p-1.5 bg-white
+                ${isToday ? 'border-slate-900' : 'border-slate-200'}`}>
+              <div className={`text-xs font-bold mb-1 ${isToday ? 'text-slate-900' : 'text-slate-500'}`}>
+                {c.date.getDate()}
+              </div>
+              <div className="space-y-0.5">
+                {c.events.slice(0, 3).map(e => {
+                  const kid = e.kid_id ? kidMap[e.kid_id] : null;
+                  const color = kid ? kid.color : '#64748b';
+                  return (
+                    <button key={e.id} onClick={() => onEdit(e)}
+                      className="w-full text-left text-[10px] truncate px-1.5 py-0.5 rounded font-medium tap"
+                      style={{ background: color + '22', color }}>
+                      {e.all_day ? '' : new Date(e.start_datetime).toLocaleTimeString(undefined,{hour:'numeric'}) + ' '}
+                      {e.title}
+                    </button>
+                  );
+                })}
+                {c.events.length > 3 && (
+                  <div className="text-[10px] text-slate-400 px-1.5">+{c.events.length - 3} more</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -256,9 +319,9 @@ function EventModal({ event, kids, onSave, onDelete, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="bg-[#111923] border border-white/10 rounded-2xl p-6 w-[560px] max-h-[90vh] overflow-auto">
-        <h3 className="text-xl font-bold mb-4">{event.id ? 'Edit event' : 'New event'}</h3>
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 w-[560px] max-h-[90vh] overflow-auto shadow-xl">
+        <h3 className="text-xl font-bold mb-4 text-slate-900">{event.id ? 'Edit event' : 'New event'}</h3>
         <div className="space-y-3">
           <Field label="Title">
             <input className="input" value={form.title}
@@ -281,7 +344,7 @@ function EventModal({ event, kids, onSave, onDelete, onClose }) {
                 type="button"
                 onClick={() => setForm({ ...form, kid_id: '' })}
                 className={`px-4 py-2 rounded-full text-sm font-semibold tap border
-                  ${!form.kid_id ? 'bg-white/15 border-white/25 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'}`}>
+                  ${!form.kid_id ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-slate-600 hover:bg-slate-100'}`}>
                 Family
               </button>
               {kids.map(k => {
@@ -290,8 +353,8 @@ function EventModal({ event, kids, onSave, onDelete, onClose }) {
                   <button key={k.id} type="button"
                     onClick={() => setForm({ ...form, kid_id: k.id })}
                     className={`px-4 py-2 rounded-full text-sm font-semibold tap border transition
-                      ${on ? 'text-white' : 'text-slate-400 hover:bg-white/5'}`}
-                    style={on ? { background: k.color + '33', borderColor: k.color } : { borderColor: 'rgba(255,255,255,0.1)' }}>
+                      ${on ? '' : 'text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                    style={on ? { background: k.color + '22', borderColor: k.color, color: k.color } : {}}>
                     {k.name}
                   </button>
                 );
@@ -304,7 +367,7 @@ function EventModal({ event, kids, onSave, onDelete, onClose }) {
               onChange={e => setForm({ ...form, notes: e.target.value })} />
           </Field>
 
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-sm text-slate-700">
             <input type="checkbox" checked={!!form.all_day}
               onChange={e => setForm({ ...form, all_day: e.target.checked })} />
             All day
@@ -312,16 +375,16 @@ function EventModal({ event, kids, onSave, onDelete, onClose }) {
         </div>
         <div className="flex gap-2 mt-6">
           <button onClick={submit}
-            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold tap">Save</button>
+            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold tap">Save</button>
           {onDelete && (
             <button onClick={onDelete}
-              className="px-6 py-3 bg-rose-700 hover:bg-rose-600 rounded-xl font-semibold tap">Delete</button>
+              className="px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-semibold tap">Delete</button>
           )}
           <button onClick={onClose}
-            className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold tap">Cancel</button>
+            className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold tap">Cancel</button>
         </div>
       </div>
-      <style>{`.input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;color:#e6edf3;font-size:15px;min-height:44px}`}</style>
+      <style>{`.input{width:100%;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;color:#0f172a;font-size:15px;min-height:44px}.input:focus{outline:none;border-color:#0f172a}`}</style>
     </div>
   );
 }
@@ -329,7 +392,7 @@ function EventModal({ event, kids, onSave, onDelete, onClose }) {
 function Field({ label, children }) {
   return (
     <div>
-      <label className="block text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">{label}</label>
+      <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">{label}</label>
       {children}
     </div>
   );
