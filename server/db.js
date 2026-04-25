@@ -126,12 +126,12 @@ export function initSchema() {
 }
 
 const SEED_KIDS = [
-  { id: 'kolt',        name: 'Kolt',        initials: 'K',  color: '#C43E3E', sort_order: 1, role: 'kid'    },
-  { id: 'michaelann',  name: 'Michael-ann', initials: 'MA', color: '#993556', sort_order: 2, role: 'kid'    },
-  { id: 'emma',        name: 'Emma',        initials: 'E',  color: '#534AB7', sort_order: 3, role: 'kid'    },
-  { id: 'preston',     name: 'Preston',     initials: 'P',  color: '#185FA5', sort_order: 4, role: 'kid'    },
-  { id: 'mom',         name: 'Mom',         initials: 'M',  color: '#0F6E56', sort_order: 5, role: 'parent' },
-  { id: 'dad',         name: 'Dad',         initials: 'D',  color: '#6B7280', sort_order: 6, role: 'parent' },
+  { id: 'mom',         name: 'Mom',         initials: 'M',  color: '#0F6E56', sort_order: 1, role: 'parent' },
+  { id: 'dad',         name: 'Dad',         initials: 'D',  color: '#6B7280', sort_order: 2, role: 'parent' },
+  { id: 'kolt',        name: 'Kolt',        initials: 'K',  color: '#C43E3E', sort_order: 3, role: 'kid'    },
+  { id: 'michaelann',  name: 'Michael-ann', initials: 'MA', color: '#993556', sort_order: 4, role: 'kid'    },
+  { id: 'emma',        name: 'Emma',        initials: 'E',  color: '#534AB7', sort_order: 5, role: 'kid'    },
+  { id: 'preston',     name: 'Preston',     initials: 'P',  color: '#185FA5', sort_order: 6, role: 'kid'    },
 ];
 
 const SEED_CHORES = {
@@ -224,6 +224,34 @@ export function applySeedColorUpdates() {
       if (row.color !== k.color && prev.includes(row.color)) {
         update.run(k.color, k.id);
         console.log(`[db] recolored ${k.id}: ${row.color} → ${k.color}`);
+      }
+    }
+  });
+  tx();
+}
+
+// Previous default sort_orders for seeded family members. Used so we can put
+// Mom/Dad first on existing installs without clobbering an admin re-order.
+const PREVIOUS_SORT_ORDERS = {
+  kolt:       [1],
+  michaelann: [2],
+  emma:       [3],
+  preston:    [4],
+  mom:        [5],
+  dad:        [6],
+};
+
+export function applySeedSortOrderUpdates() {
+  const getOrder = db.prepare('SELECT sort_order FROM kids WHERE id = ?');
+  const update   = db.prepare('UPDATE kids SET sort_order = ? WHERE id = ?');
+  const tx = db.transaction(() => {
+    for (const k of SEED_KIDS) {
+      const row = getOrder.get(k.id);
+      if (!row) continue;
+      const prev = PREVIOUS_SORT_ORDERS[k.id] || [];
+      if (row.sort_order !== k.sort_order && prev.includes(row.sort_order)) {
+        update.run(k.sort_order, k.id);
+        console.log(`[db] reordered ${k.id}: ${row.sort_order} → ${k.sort_order}`);
       }
     }
   });
