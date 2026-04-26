@@ -349,6 +349,8 @@ function PersonChoresTile({ kid, chores, onToggle, streak = 0 }) {
       <div className="flex-1 p-2 overflow-auto space-y-1.5">
         {chores.length === 0 ? (
           <div className="text-slate-400 text-center py-3 text-xs">No chores scheduled today</div>
+        ) : allDone ? (
+          <AllDoneBody kid={kid} earned={earned} streak={streak} isParent={isParent} onToggle={onToggle} chores={chores} />
         ) : chores.map(c => (
           <button
             key={c.id}
@@ -379,6 +381,52 @@ function PersonChoresTile({ kid, chores, onToggle, streak = 0 }) {
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+// Big "All Done!" body that takes over the chore list once everything is checked off.
+// Visible from across the room. Tapping anywhere on it lets you uncheck a chore (long-press
+// on a chore title shows the list to undo) — keeping it simple: just a big celebration card.
+function AllDoneBody({ kid, earned, streak, isParent, chores, onToggle }) {
+  const [showList, setShowList] = useState(false);
+  return (
+    <div className="h-full flex flex-col items-center justify-center text-center px-2 py-3 relative"
+      style={{
+        background: `linear-gradient(180deg, ${kid.color}1F 0%, ${kid.color}08 100%)`,
+        borderRadius: 12,
+      }}>
+      <div className="text-6xl emoji mb-1 leading-none" style={{ filter: `drop-shadow(0 2px 4px ${kid.color}55)` }}>🎉</div>
+      <div className="text-2xl font-extrabold leading-tight" style={{ color: kid.color }}>All Done!</div>
+      <div className="mt-1 text-sm text-slate-700">
+        {isParent ? `${chores.length}/${chores.length} chores` : <>+{earned} pts today</>}
+      </div>
+      {streak >= 2 && (
+        <div className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-orange-700 bg-orange-100 rounded-full px-3 py-1">
+          <span className="emoji">🔥</span>{streak}-day streak
+        </div>
+      )}
+      <button
+        onClick={() => setShowList(s => !s)}
+        className="mt-3 text-[11px] text-slate-500 underline tap min-h-0 px-2 py-1">
+        {showList ? 'hide' : 'undo a chore'}
+      </button>
+      {showList && (
+        <div className="mt-2 w-full space-y-1 text-left">
+          {chores.map(c => (
+            <button key={c.id} onClick={() => onToggle(c)}
+              className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs bg-white border border-slate-200 hover:bg-slate-50">
+              <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0" style={{ background: kid.color }}>
+                <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="white" strokeWidth="3">
+                  <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <span className="flex-1 truncate text-slate-600 line-through">{c.title}</span>
+              {!isParent && <span className="text-slate-400">+{c.points}</span>}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
