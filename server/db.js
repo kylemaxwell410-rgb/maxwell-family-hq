@@ -191,8 +191,8 @@ export function initSchema() {
 
 const SEED_KIDS = [
   { id: 'kolt',        name: 'Kolt',        initials: 'K',  color: '#C43E3E', sort_order: 1, role: 'kid',    birthday: '02-07' },
-  { id: 'michaelann',  name: 'Michael-ann', initials: 'MA', color: '#993556', sort_order: 2, role: 'kid',    birthday: '01-29' },
-  { id: 'emma',        name: 'Emma',        initials: 'E',  color: '#534AB7', sort_order: 3, role: 'kid',    birthday: '02-14' },
+  { id: 'michaelann',  name: 'Michael-ann', initials: 'MA', color: '#EC4899', sort_order: 2, role: 'kid',    birthday: '01-29' },
+  { id: 'emma',        name: 'Emma',        initials: 'E',  color: '#22C55E', sort_order: 3, role: 'kid',    birthday: '02-14' },
   { id: 'preston',     name: 'Preston',     initials: 'P',  color: '#185FA5', sort_order: 4, role: 'kid',    birthday: '11-25' },
   { id: 'mom',         name: 'Mom',         initials: 'M',  color: '#14B8A6', sort_order: 5, role: 'parent', birthday: '08-15' },
   { id: 'dad',         name: 'Dad',         initials: 'D',  color: '#6B7280', sort_order: 6, role: 'parent', birthday: '04-10' },
@@ -284,9 +284,11 @@ export function seedIfEmpty() {
 // Respects admin edits: only updates if the color is still the *previous* seeded color
 // (tracked via this table of historical defaults), so a user override via Admin sticks.
 const PREVIOUS_COLORS = {
-  kolt:    ['#185FA5'],                         // was blue, now red
-  preston: ['#0F6E56'],                         // was teal, now blue
-  mom:     ['#0F6E56'],                         // was green, now teal
+  kolt:       ['#185FA5'],            // was blue, now red
+  preston:    ['#0F6E56'],            // was teal, now blue
+  mom:        ['#0F6E56'],            // was green, now teal
+  michaelann: ['#993556'],            // was magenta, now pink
+  emma:       ['#534AB7'],            // was purple, now green
 };
 
 export function applySeedColorUpdates() {
