@@ -177,19 +177,19 @@ function WeatherCard({ weather, err }) {
     <div className="surface p-4 flex flex-col overflow-hidden">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Weather</div>
-          <div className="text-xs text-slate-500">{loc.label}</div>
+          <div className="text-xs lg:text-sm uppercase tracking-wider text-slate-400 font-semibold">Weather</div>
+          <div className="text-sm lg:text-base text-slate-500">{loc.label}</div>
         </div>
-        <div className="text-3xl emoji">{desc.emoji}</div>
+        <div className="text-4xl emoji">{desc.emoji}</div>
       </div>
 
       {/* Top: temperature on the left, 3 big forecast tiles on the right */}
       <div className="mt-2 grid grid-cols-[auto_1fr] gap-4 items-stretch">
         <div className="flex flex-col justify-center">
-          <div className="text-6xl font-extrabold tabular-nums leading-none text-slate-900">{weather.current.tempF}°</div>
-          <div className="mt-1 text-base text-slate-700 font-semibold leading-tight">{desc.label}</div>
-          <div className="text-xs text-slate-500 tabular-nums">H {weather.today.highF}° · L {weather.today.lowF}°</div>
-          <div className="text-xs text-slate-500 tabular-nums">
+          <div className="text-7xl font-extrabold tabular-nums leading-none text-slate-900">{weather.current.tempF}°</div>
+          <div className="mt-1 text-xl text-slate-700 font-semibold leading-tight">{desc.label}</div>
+          <div className="text-base text-slate-600 tabular-nums font-semibold">H {weather.today.highF}° · L {weather.today.lowF}°</div>
+          <div className="text-base text-slate-600 tabular-nums font-semibold">
             Rain: {weather.today.precipPct ?? 0}%{precipSuffix(weather.today.precipSum)}
           </div>
         </div>
@@ -232,15 +232,15 @@ function ForecastDay({ day, index, size = 'sm' }) {
   const big = size === 'lg';
   return (
     <div className={`bg-slate-50 border border-slate-200 rounded-lg text-center
-      ${big ? 'px-2 py-2' : 'px-1 py-1'}`}>
-      <div className={`uppercase tracking-wide text-slate-500 font-semibold ${big ? 'text-xs' : 'text-[9px]'}`}>{label}</div>
-      <div className={`leading-tight emoji ${big ? 'text-4xl my-1' : 'text-lg'}`}>{desc.emoji}</div>
-      <div className={`tabular-nums text-slate-700 leading-tight ${big ? 'text-base' : 'text-[11px]'}`}>
+      ${big ? 'px-2 py-2' : 'px-1 py-1.5'}`}>
+      <div className={`uppercase tracking-wide text-slate-500 font-semibold ${big ? 'text-sm' : 'text-[10px]'}`}>{label}</div>
+      <div className={`leading-tight emoji ${big ? 'text-5xl my-1' : 'text-xl'}`}>{desc.emoji}</div>
+      <div className={`tabular-nums text-slate-700 leading-tight ${big ? 'text-lg' : 'text-xs'}`}>
         <span className="font-bold">{day.highF}°</span>
         <span className="text-slate-400"> / {day.lowF}°</span>
       </div>
       {day.precipPct != null && day.precipPct >= 10 && (
-        <div className={`text-slate-400 tabular-nums ${big ? 'text-xs font-semibold' : 'text-[9px]'}`}>{day.precipPct}%{big ? ' rain' : ''}</div>
+        <div className={`text-slate-500 tabular-nums font-semibold ${big ? 'text-sm' : 'text-[10px]'}`}>{day.precipPct}%{big ? ' rain' : ''}</div>
       )}
     </div>
   );
@@ -251,17 +251,17 @@ function ForecastDay({ day, index, size = 'sm' }) {
 function EventsCard({ title, events, kids }) {
   const colorFor = (kid_id) => kids.find(k => k.id === kid_id)?.color || '#94a3b8';
   return (
-    <Card title={title}>
+    <Card title={title} bigTitle>
       {events.length === 0 ? (
-        <div className="text-slate-400 text-sm py-4 text-center">Nothing scheduled</div>
+        <div className="text-slate-400 text-base py-6 text-center">Nothing scheduled</div>
       ) : (
-        <div className="space-y-1.5 overflow-auto pr-1">
+        <div className="space-y-2 overflow-auto pr-1">
           {events.map(e => (
-            <div key={e.id} className="flex gap-2 items-start bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">
-              <div className="w-1 self-stretch rounded-full" style={{ background: colorFor(e.kid_id) }} />
+            <div key={e.id} className="flex gap-2 items-start bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+              <div className="w-1.5 self-stretch rounded-full" style={{ background: colorFor(e.kid_id) }} />
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold truncate text-slate-900">{e.title}</div>
-                <div className="text-[10px] text-slate-500 tabular-nums">
+                <div className="text-lg lg:text-xl font-bold truncate text-slate-900 leading-tight">{e.title}</div>
+                <div className="text-sm lg:text-base text-slate-600 tabular-nums font-semibold leading-tight">
                   {e.all_day ? 'All day' : fmtTime(e.start_datetime)}
                 </div>
               </div>
@@ -281,20 +281,20 @@ function DinnerCard({ meal }) {
     : null;
   return (
     <div className="surface p-3 flex flex-col overflow-hidden">
-      <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Tonight's Dinner</div>
-      <div className="flex-1 flex flex-col items-center justify-center text-center gap-2">
+      <div className="text-xs lg:text-sm uppercase tracking-wider text-slate-400 font-semibold">Tonight's Dinner</div>
+      <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
         {meal?.description ? (
           <>
-            <div className="text-base lg:text-lg font-bold leading-tight text-slate-900">
+            <div className="text-lg lg:text-xl font-extrabold leading-tight text-slate-900">
               <span className="emoji">🍽️</span> {meal.description}
             </div>
             <a href={recipeUrl} target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold tap shadow-sm">
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold tap shadow-sm">
               <span className="emoji">🍴</span> Click here for recipe
             </a>
           </>
         ) : (
-          <div className="text-slate-400 text-xs">Not planned yet — set it on the Meals tab</div>
+          <div className="text-slate-400 text-base">Not planned yet — set it on the Meals tab</div>
         )}
       </div>
     </div>
@@ -622,10 +622,11 @@ function bedtimeCountdown(bedtimeHHMM, now) {
 
 /* =================== Card shell =================== */
 
-function Card({ title, children }) {
+function Card({ title, children, bigTitle }) {
   return (
     <div className="surface p-3 flex flex-col overflow-hidden">
-      <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1.5">{title}</div>
+      <div className={`uppercase tracking-wider text-slate-400 font-semibold mb-1.5
+        ${bigTitle ? 'text-xs lg:text-sm' : 'text-[10px]'}`}>{title}</div>
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">{children}</div>
     </div>
   );
