@@ -85,6 +85,13 @@ export default function Chores({ kids: allKids, onKidsChange }) {
   }
 
   useEffect(() => { loadAll(); }, [date]);
+  // Refresh every 30s so toggles from another device (Pi, other phone)
+  // propagate — otherwise a stale FreeTimeCard can stay on screen after
+  // a chore is unchecked elsewhere.
+  useEffect(() => {
+    const id = setInterval(() => loadAll(), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   async function toggle(chore) {
     if (chore.completed) await api.uncompleteChore(chore.id, date);

@@ -57,19 +57,26 @@ router.get('/', (req, res) => {
     let overdue_days = 0;
 
     if (c.frequency === 'interval' && c.interval_days) {
-      const last = lastCompletionStmt.get(c.id, date)?.d;
-      if (!last) {
+      // Keep an interval chore visible on the day it's completed so the
+      // parent sees the "All done" state instead of an empty column.
+      if (completed) {
         include = true;
         overdue_days = 0;
       } else {
-        const due = (() => {
-          const d = new Date(last + 'T00:00:00');
-          d.setDate(d.getDate() + c.interval_days);
-          return todayStr(d);
-        })();
-        if (date >= due) {
+        const last = lastCompletionStmt.get(c.id, date)?.d;
+        if (!last) {
           include = true;
-          overdue_days = Math.max(0, daysBetween(due, date));
+          overdue_days = 0;
+        } else {
+          const due = (() => {
+            const d = new Date(last + 'T00:00:00');
+            d.setDate(d.getDate() + c.interval_days);
+            return todayStr(d);
+          })();
+          if (date >= due) {
+            include = true;
+            overdue_days = Math.max(0, daysBetween(due, date));
+          }
         }
       }
     } else if (c.frequency === 'weekly_rolling') {

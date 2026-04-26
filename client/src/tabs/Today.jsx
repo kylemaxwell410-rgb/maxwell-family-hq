@@ -245,10 +245,9 @@ function ForecastDay({ day, index, size = 'sm' }) {
           <span className="text-slate-400"> / {day.lowF}°</span>
         </div>
         {day.precipPct != null && day.precipPct >= 10 && (
-          <div className="text-base text-slate-500 tabular-nums font-semibold">{day.precipPct}% rain</div>
-        )}
-        {day.precipSum >= 0.01 && (
-          <div className="text-sm text-slate-500 tabular-nums font-semibold">{fmtPrecip(day.precipSum)} in</div>
+          <div className="text-base text-slate-500 tabular-nums font-semibold">
+            {day.precipPct}%{precipSuffix(day.precipSum)}
+          </div>
         )}
       </div>
     );
@@ -264,10 +263,9 @@ function ForecastDay({ day, index, size = 'sm' }) {
           <span className="text-slate-400"> / {day.lowF}°</span>
         </div>
         {day.precipPct != null && day.precipPct >= 10 && (
-          <div className="text-xs text-slate-500 tabular-nums font-semibold">{day.precipPct}%</div>
-        )}
-        {day.precipSum >= 0.01 && (
-          <div className="text-xs text-slate-500 tabular-nums font-semibold">{fmtPrecip(day.precipSum)} in</div>
+          <div className="text-xs text-slate-500 tabular-nums font-semibold">
+            {day.precipPct}%{precipSuffix(day.precipSum)}
+          </div>
         )}
       </div>
     </div>
