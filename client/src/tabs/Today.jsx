@@ -17,6 +17,7 @@ export default function Today({ kids: allKids, onKidsChange }) {
   const [weatherErr, setWeatherErr]       = useState(null);
   const [settings, setSettings]           = useState({});
   const [notes, setNotes]                 = useState([]);
+  const [streaks, setStreaks]             = useState({});
   const [now, setNow]                     = useState(new Date());
   const dStr = todayStr();
 
@@ -25,13 +26,14 @@ export default function Today({ kids: allKids, onKidsChange }) {
     const todayEnd = endOfDay(new Date());
     const tomorrow    = startOfDay(addDays(new Date(), 1));
     const tomorrowEnd = endOfDay(addDays(new Date(), 1));
-    const [c, eToday, eTomorrow, m, s, n] = await Promise.all([
+    const [c, eToday, eTomorrow, m, s, n, st] = await Promise.all([
       api.chores(dStr),
       api.events(today.toISOString(), todayEnd.toISOString()),
       api.events(tomorrow.toISOString(), tomorrowEnd.toISOString()),
       api.meals(dStr, dStr),
       api.settings(),
       api.notes(),
+      api.streaks(),
     ]);
     setChores(c);
     setTodayEvents(eToday);
@@ -39,6 +41,7 @@ export default function Today({ kids: allKids, onKidsChange }) {
     setMeal((m || []).find(x => x.meal_type === 'dinner') || null);
     setSettings(s);
     setNotes(n);
+    setStreaks(st);
   }
 
   useEffect(() => {
@@ -107,6 +110,7 @@ export default function Today({ kids: allKids, onKidsChange }) {
             key={kid.id}
             kid={kid}
             chores={choresByKid[kid.id] || []}
+            streak={streaks[kid.id] || 0}
             onToggle={toggle}
           />
         ))}
@@ -267,7 +271,7 @@ function DinnerCard({ meal }) {
 
 /* =================== Person chores tile =================== */
 
-function PersonChoresTile({ kid, chores, onToggle }) {
+function PersonChoresTile({ kid, chores, onToggle, streak = 0 }) {
   const done  = chores.filter(c => c.completed).length;
   const total = chores.length;
   const allDone = total > 0 && done === total;
@@ -298,7 +302,15 @@ function PersonChoresTile({ kid, chores, onToggle }) {
           <div className="w-11 h-11 rounded-full flex items-center justify-center text-base font-bold flex-shrink-0 text-white"
             style={{ background: kid.color }}>{kid.initials}</div>
           <div className="min-w-0">
-            <div className="text-base font-bold leading-tight truncate text-slate-900">{kid.name}</div>
+            <div className="flex items-center gap-1.5">
+              <div className="text-base font-bold leading-tight truncate text-slate-900">{kid.name}</div>
+              {streak >= 2 && (
+                <div className="flex items-center text-[11px] font-bold text-orange-600 bg-orange-100 rounded-full px-1.5 py-0.5 leading-none flex-shrink-0"
+                  title={`${streak}-day streak`}>
+                  <span className="emoji mr-0.5">🔥</span>{streak}
+                </div>
+              )}
+            </div>
             <div className="text-[10px] text-slate-500 leading-tight">
               {total === 0 ? 'No chores today' :
                 allDone ? <><span className="emoji">🎉</span> All done</> :

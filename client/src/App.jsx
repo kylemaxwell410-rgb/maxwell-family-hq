@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Header from './components/Header.jsx';
 import TabNav from './components/TabNav.jsx';
 import { BoredModal, AskModal } from './components/QuickActions.jsx';
+import VirtualKeyboard from './components/VirtualKeyboard.jsx';
 import Today from './tabs/Today.jsx';
 import Chores from './tabs/Chores.jsx';
 import Calendar from './tabs/Calendar.jsx';
@@ -53,6 +54,7 @@ export default function App() {
       </main>
       {boredOpen && <BoredModal onClose={() => setBoredOpen(false)} />}
       {askOpen   && <AskModal kids={kids} onClose={() => setAskOpen(false)} />}
+      <VirtualKeyboard />
     </div>
   );
 }

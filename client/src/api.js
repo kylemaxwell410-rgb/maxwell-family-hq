@@ -89,6 +89,9 @@ export const api = {
     method: 'DELETE', headers: { 'x-admin-pin': pin },
   }),
 
+  // streaks
+  streaks: () => req('/streaks'),
+
   // bot
   askBot: (question, kid_name) => req('/bot/ask', {
     method: 'POST', body: JSON.stringify({ question, kid_name }),

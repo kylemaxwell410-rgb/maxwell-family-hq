@@ -11,6 +11,7 @@ import adminRouter from './routes/admin.js';
 import settingsRouter from './routes/settings.js';
 import notesRouter from './routes/notes.js';
 import botRouter from './routes/bot.js';
+import streaksRouter from './routes/streaks.js';
 
 initSchema();
 seedIfEmpty();
@@ -36,6 +37,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/notes', notesRouter);
 app.use('/api/bot', botRouter);
+app.use('/api/streaks', streaksRouter);
 
 app.use((err, _req, res, _next) => {
   console.error('[api]', err);
