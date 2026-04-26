@@ -323,15 +323,18 @@ function PersonChoresTile({ kid, chores, onToggle, streak = 0 }) {
             style={{ background: kid.color }}>{kid.initials}</div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <div className="text-base font-bold leading-tight truncate text-slate-900">{kid.name}</div>
+              <div className="text-xl lg:text-2xl font-extrabold leading-tight truncate text-slate-900 uppercase tracking-wide"
+                style={{ color: kid.color }}>
+                {kid.name}
+              </div>
               {streak >= 2 && (
-                <div className="flex items-center text-[11px] font-bold text-orange-600 bg-orange-100 rounded-full px-1.5 py-0.5 leading-none flex-shrink-0"
+                <div className="flex items-center text-xs font-bold text-orange-600 bg-orange-100 rounded-full px-1.5 py-0.5 leading-none flex-shrink-0"
                   title={`${streak}-day streak`}>
                   <span className="emoji mr-0.5">🔥</span>{streak}
                 </div>
               )}
             </div>
-            <div className="text-[10px] text-slate-500 leading-tight">
+            <div className="text-xs text-slate-500 leading-tight mt-0.5">
               {total === 0 ? 'No chores today' :
                 allDone ? <><span className="emoji">🎉</span> All done</> :
                 isParent ? `${done}/${total} done` : `${done}/${total} · ${earned}/${possible} pts`}
