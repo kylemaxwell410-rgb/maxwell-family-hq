@@ -195,7 +195,7 @@ function WeatherCard({ weather, err }) {
         </div>
       </div>
 
-      <div className="mt-auto grid grid-cols-3 gap-2 pt-2">
+      <div className="mt-auto grid grid-cols-7 gap-1 pt-2">
         {weather.forecast.map((d, i) => (
           <ForecastDay key={d.date} day={d} index={i} />
         ))}
@@ -219,19 +219,20 @@ function precipSuffix(inches) {
 
 function ForecastDay({ day, index }) {
   const desc = describeCode(day.code);
-  const label = index === 0 ? 'Today' : index === 1 ? 'Tomorrow' :
-    fmtDayOfWeek(day.date + 'T12:00:00');
+  // 7-day strip: short labels so 7 cards fit. Mon/Tue/etc; first two are still Today/Tom.
+  const label = index === 0 ? 'TODAY' : index === 1 ? 'TMRW' :
+    fmtDayOfWeek(day.date + 'T12:00:00').toUpperCase();
   return (
-    <div className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-center">
-      <div className="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">{label}</div>
-      <div className="text-2xl leading-tight emoji">{desc.emoji}</div>
-      <div className="text-xs tabular-nums text-slate-700">
+    <div className="bg-slate-50 border border-slate-200 rounded-lg px-1 py-1 text-center">
+      <div className="text-[9px] uppercase tracking-wide text-slate-400 font-semibold">{label}</div>
+      <div className="text-lg leading-tight emoji">{desc.emoji}</div>
+      <div className="text-[11px] tabular-nums text-slate-700 leading-tight">
         <span className="font-bold">{day.highF}°</span>
         <span className="text-slate-400"> / {day.lowF}°</span>
       </div>
-      <div className="text-[10px] text-slate-400 tabular-nums">
-        {day.precipPct == null ? '' : `${day.precipPct}%${day.precipSum && day.precipSum >= 0.01 ? ` · ${fmtPrecip(day.precipSum)}″` : ''}`}
-      </div>
+      {day.precipPct != null && day.precipPct >= 10 && (
+        <div className="text-[9px] text-slate-400 tabular-nums">{day.precipPct}%</div>
+      )}
     </div>
   );
 }
@@ -474,7 +475,7 @@ function ConfettiOverlay({ color }) {
 // stack vertically.
 function BottomStrip({ upcoming, bedtime, now, vacation }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[max-content_minmax(0,1fr)_max-content] gap-3 flex-shrink-0 lg:h-[110px]">
+    <div className="grid grid-cols-1 lg:grid-cols-[max-content_minmax(0,1fr)_max-content] gap-3 flex-shrink-0 lg:h-[130px]">
       <UpcomingCard items={upcoming} />
       <NextVacationCard vacation={vacation} />
       <BedtimeCard bedtime={bedtime} now={now} />
@@ -486,10 +487,10 @@ function NextVacationCard({ vacation }) {
   if (!vacation) {
     return (
       <div className="surface p-3 flex items-center gap-3">
-        <div className="text-3xl emoji">🌴</div>
+        <div className="text-4xl emoji">🌴</div>
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Next Vacation</div>
-          <div className="text-sm text-slate-400">No trips on the books — add one in Admin → Vacations</div>
+          <div className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Next Vacation</div>
+          <div className="text-base text-slate-400">No trips on the books — add one in Admin → Vacations</div>
         </div>
       </div>
     );
@@ -509,13 +510,13 @@ function NextVacationCard({ vacation }) {
   })();
   return (
     <div className="surface p-3 flex items-center gap-3">
-      <div className="text-3xl emoji flex-shrink-0">🌴</div>
+      <div className="text-5xl emoji flex-shrink-0">🌴</div>
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Next Vacation</div>
-        <div className="text-base font-bold leading-tight text-slate-900 truncate">
+        <div className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Next Vacation</div>
+        <div className="text-xl font-extrabold leading-tight text-slate-900 truncate">
           {vacation.title}{vacation.location ? <span className="font-normal text-slate-500"> · {vacation.location}</span> : null}
         </div>
-        <div className="text-[10px] text-slate-500 leading-tight tabular-nums">
+        <div className="text-sm text-slate-600 leading-tight tabular-nums font-semibold">
           {inProgress ? '🌞 Right now!' : days === 0 ? 'Starts today' : days === 1 ? 'Tomorrow' : `in ${days} days`}
           {' · '}{range}
         </div>
@@ -561,17 +562,17 @@ function UpcomingCard({ items }) {
 function BedtimeCard({ bedtime, now }) {
   const info = bedtime ? bedtimeCountdown(bedtime, now) : null;
   return (
-    <div className="surface p-3 flex items-center gap-3 min-w-[230px]">
-      <div className="text-3xl emoji">🌙</div>
+    <div className="surface p-3 flex items-center gap-3 min-w-[260px]">
+      <div className="text-5xl emoji">🌙</div>
       <div className="min-w-0">
-        <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Bedtime</div>
+        <div className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Bedtime</div>
         {info ? (
           <>
-            <div className="text-base font-bold leading-tight text-slate-900">{info.label}</div>
-            <div className="text-[10px] text-slate-500 tabular-nums">at {info.timeLabel}</div>
+            <div className="text-xl font-extrabold leading-tight text-slate-900 tabular-nums">{info.label}</div>
+            <div className="text-sm text-slate-600 tabular-nums font-semibold">at {info.timeLabel}</div>
           </>
         ) : (
-          <div className="text-xs text-slate-400">Set bedtime in Admin</div>
+          <div className="text-sm text-slate-400">Set bedtime in Admin</div>
         )}
       </div>
     </div>

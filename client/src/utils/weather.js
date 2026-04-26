@@ -31,7 +31,7 @@ export async function fetchWeather() {
   url.searchParams.set('wind_speed_unit', 'mph');
   url.searchParams.set('precipitation_unit', 'inch');
   url.searchParams.set('timezone', loc.timezone);
-  url.searchParams.set('forecast_days', '3');
+  url.searchParams.set('forecast_days', '7');
   const res = await fetch(url);
   if (!res.ok) throw new Error('Weather fetch failed');
   const data = await res.json();
