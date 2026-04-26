@@ -7,15 +7,20 @@ const DOW = ['S','M','T','W','T','F','S'];
 export default function Admin({ kids, onKidsChange }) {
   const [pin, setPin] = useState(null);
   const [chores, setChores] = useState([]);
-  const [section, setSection] = useState('chores'); // chores | kids | points
+  const [section, setSection] = useState('chores'); // chores | kids | points | settings
   const [editing, setEditing] = useState(null);
   const [adjust, setAdjust] = useState(null);
+  const [settings, setSettings] = useState({});
 
   async function loadChores() {
     if (!pin) return;
     setChores(await api.adminChores(pin));
   }
+  async function loadSettings() {
+    setSettings(await api.settings());
+  }
   useEffect(() => { loadChores(); }, [pin]);
+  useEffect(() => { loadSettings(); }, []);
 
   if (!pin) return <PinModal onVerified={setPin} onCancel={() => setPin(null)} />;
 
@@ -46,10 +51,15 @@ export default function Admin({ kids, onKidsChange }) {
     await onKidsChange();
   }
 
+  async function saveSetting(key, value) {
+    await api.updateSetting(pin, key, value);
+    await loadSettings();
+  }
+
   return (
     <div className="h-full flex gap-4 p-6 overflow-hidden">
       <nav className="w-52 flex flex-col gap-1">
-        {['chores','kids','points'].map(s => (
+        {['chores','kids','points','settings'].map(s => (
           <button key={s} onClick={() => setSection(s)}
             className={`px-4 py-3 rounded-xl font-semibold capitalize text-left tap
               ${section === s ? 'bg-white/10' : 'hover:bg-white/5 text-slate-400'}`}>
@@ -113,6 +123,10 @@ export default function Admin({ kids, onKidsChange }) {
               ))}
             </div>
           </>
+        )}
+
+        {section === 'settings' && (
+          <SettingsSection settings={settings} onSave={saveSetting} />
         )}
 
         {section === 'points' && (
@@ -320,6 +334,77 @@ function Modal({ children }) {
       </div>
       <style>{`.input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;color:#e6edf3;font-size:15px;min-height:44px}`}</style>
     </div>
+  );
+}
+
+function SettingsSection({ settings, onSave }) {
+  const [bedtime, setBedtime] = useState(settings.bedtime || '20:45');
+  const [weatherLat, setWeatherLat] = useState('');
+  const [weatherLon, setWeatherLon] = useState('');
+  const [weatherLabel, setWeatherLabel] = useState('');
+
+  useEffect(() => { setBedtime(settings.bedtime || '20:45'); }, [settings.bedtime]);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('maxwell_location');
+      if (raw) {
+        const j = JSON.parse(raw);
+        setWeatherLat(j.latitude ?? '');
+        setWeatherLon(j.longitude ?? '');
+        setWeatherLabel(j.label ?? '');
+      }
+    } catch {}
+  }, []);
+
+  function saveLocation() {
+    if (!weatherLat || !weatherLon) {
+      localStorage.removeItem('maxwell_location');
+    } else {
+      localStorage.setItem('maxwell_location', JSON.stringify({
+        latitude: Number(weatherLat),
+        longitude: Number(weatherLon),
+        timezone: 'America/New_York',
+        label: weatherLabel || `${weatherLat}, ${weatherLon}`,
+      }));
+    }
+    alert('Location saved. The Today tab will refresh on next reload.');
+  }
+
+  return (
+    <>
+      <div className="p-4 border-b border-white/5"><h2 className="text-xl font-bold">Settings</h2></div>
+      <div className="p-6 space-y-6 overflow-auto">
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">
+            Family bedtime (24-hour)
+          </label>
+          <div className="flex gap-2 items-center">
+            <input type="time" className="input max-w-[160px]" value={bedtime}
+              onChange={e => setBedtime(e.target.value)} />
+            <button onClick={() => onSave('bedtime', bedtime)}
+              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold tap">Save</button>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">Currently saved: {settings.bedtime || '—'}</p>
+        </div>
+
+        <div className="border-t border-white/5 pt-5">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">
+            Weather location (override default Callahan, FL)
+          </label>
+          <div className="grid grid-cols-3 gap-2 max-w-[600px]">
+            <input className="input" placeholder="Latitude (e.g. 30.5582)"
+              value={weatherLat} onChange={e => setWeatherLat(e.target.value)} />
+            <input className="input" placeholder="Longitude (e.g. -81.8307)"
+              value={weatherLon} onChange={e => setWeatherLon(e.target.value)} />
+            <input className="input" placeholder="Label (e.g. Callahan, FL)"
+              value={weatherLabel} onChange={e => setWeatherLabel(e.target.value)} />
+          </div>
+          <button onClick={saveLocation}
+            className="mt-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold tap">Save location</button>
+          <p className="text-xs text-slate-500 mt-1">Stored in this browser only. Leave blank to use the default.</p>
+        </div>
+      </div>
+    </>
   );
 }
 

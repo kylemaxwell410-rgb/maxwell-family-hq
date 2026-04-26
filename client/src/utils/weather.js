@@ -2,10 +2,10 @@
 // Edit DEFAULT_LOCATION below or override at runtime via localStorage 'maxwell_location'
 // stored as JSON: { latitude, longitude, timezone, label }.
 const DEFAULT_LOCATION = {
-  latitude: 28.0395,
-  longitude: -81.9498,
+  latitude: 30.5582,
+  longitude: -81.8307,
   timezone: 'America/New_York',
-  label: 'Lakeland, FL',
+  label: 'Callahan, FL',
 };
 
 export function getLocation() {
@@ -30,10 +30,19 @@ export async function fetchWeather() {
   url.searchParams.set('temperature_unit', 'fahrenheit');
   url.searchParams.set('wind_speed_unit', 'mph');
   url.searchParams.set('timezone', loc.timezone);
-  url.searchParams.set('forecast_days', '1');
+  url.searchParams.set('forecast_days', '3');
   const res = await fetch(url);
   if (!res.ok) throw new Error('Weather fetch failed');
   const data = await res.json();
+  const days = data.daily.time.map((iso, i) => ({
+    date: iso,
+    code: data.daily.weather_code[i],
+    highF: Math.round(data.daily.temperature_2m_max[i]),
+    lowF:  Math.round(data.daily.temperature_2m_min[i]),
+    precipPct: data.daily.precipitation_probability_max?.[i] ?? null,
+    sunrise: data.daily.sunrise?.[i],
+    sunset:  data.daily.sunset?.[i],
+  }));
   return {
     location: loc,
     current: {
@@ -42,14 +51,8 @@ export async function fetchWeather() {
       isDay: !!data.current.is_day,
       windMph: Math.round(data.current.wind_speed_10m),
     },
-    today: {
-      highF: Math.round(data.daily.temperature_2m_max[0]),
-      lowF:  Math.round(data.daily.temperature_2m_min[0]),
-      precipPct: data.daily.precipitation_probability_max?.[0] ?? null,
-      code: data.daily.weather_code[0],
-      sunrise: data.daily.sunrise?.[0],
-      sunset:  data.daily.sunset?.[0],
-    },
+    today: days[0],
+    forecast: days, // [today, tomorrow, day after]
   };
 }
 

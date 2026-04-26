@@ -10,7 +10,8 @@ function fmtEventTime(iso, allDay) {
   return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
-export default function Chores({ kids, onKidsChange }) {
+export default function Chores({ kids: allKids, onKidsChange }) {
+  const kids = allKids.filter(k => k.role !== 'pet');
   const [chores, setChores] = useState([]);
   const [events, setEvents] = useState([]);
   const [date] = useState(todayStr());

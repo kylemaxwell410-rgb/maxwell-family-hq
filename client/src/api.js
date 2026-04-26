@@ -70,6 +70,12 @@ export const api = {
   updateKid: (pin, id, body) => req(`/admin/kids/${id}`, {
     method: 'PUT', headers: { 'x-admin-pin': pin }, body: JSON.stringify(body),
   }),
+
+  // settings
+  settings: () => req('/settings'),
+  updateSetting: (pin, key, value) => req(`/settings/${encodeURIComponent(key)}`, {
+    method: 'PUT', headers: { 'x-admin-pin': pin }, body: JSON.stringify({ value }),
+  }),
 };
 
 export function todayStr(d = new Date()) {

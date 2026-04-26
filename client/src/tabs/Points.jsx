@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 
 export default function Points({ kids: allKids, onKidsChange }) {
-  const kids = allKids.filter(k => k.role !== 'parent');
+  const kids = allKids.filter(k => k.role === 'kid');
   const [rewards, setRewards] = useState([]);
   const [txns, setTxns] = useState([]);
   const [selectedKid, setSelectedKid] = useState(null);

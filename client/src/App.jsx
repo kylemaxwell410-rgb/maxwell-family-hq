@@ -43,7 +43,7 @@ export default function App() {
       <Header />
       <TabNav tabs={TABS} current={tab} onChange={setTab} />
       <main className="flex-1 overflow-hidden">
-        {tab === 'today'    && <Today    kids={kids} />}
+        {tab === 'today'    && <Today    kids={kids} onKidsChange={loadKids} />}
         {tab === 'chores'   && <Chores   kids={kids} onKidsChange={loadKids} />}
         {tab === 'calendar' && <Calendar kids={kids} />}
         {tab === 'meals'    && <Meals    />}

@@ -132,6 +132,14 @@ export function initSchema() {
     console.log('[db] added birthday column to kids');
   }
 
+  // Idempotent migration: add bedtime column (TEXT, "HH:MM" 24h, nullable).
+  try {
+    db.prepare('SELECT bedtime FROM kids LIMIT 1').get();
+  } catch {
+    db.exec('ALTER TABLE kids ADD COLUMN bedtime TEXT');
+    console.log('[db] added bedtime column to kids');
+  }
+
   // Family notes (Chunk 2 hook — table created now so the API surface is stable).
   db.exec(`
     CREATE TABLE IF NOT EXISTS family_notes (
@@ -141,15 +149,28 @@ export function initSchema() {
       created_at TEXT NOT NULL
     );
   `);
+
+  // Family-wide settings (bedtime, future bot key, etc.).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    );
+  `);
+  // Seed defaults if not present.
+  const seedSetting = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
+  seedSetting.run('bedtime', '20:45'); // 8:45 PM, family-wide
 }
 
 const SEED_KIDS = [
-  { id: 'kolt',        name: 'Kolt',        initials: 'K',  color: '#C43E3E', sort_order: 1, role: 'kid'    },
-  { id: 'michaelann',  name: 'Michael-ann', initials: 'MA', color: '#993556', sort_order: 2, role: 'kid'    },
-  { id: 'emma',        name: 'Emma',        initials: 'E',  color: '#534AB7', sort_order: 3, role: 'kid'    },
-  { id: 'preston',     name: 'Preston',     initials: 'P',  color: '#185FA5', sort_order: 4, role: 'kid'    },
-  { id: 'mom',         name: 'Mom',         initials: 'M',  color: '#0F6E56', sort_order: 5, role: 'parent' },
-  { id: 'dad',         name: 'Dad',         initials: 'D',  color: '#6B7280', sort_order: 6, role: 'parent' },
+  { id: 'kolt',        name: 'Kolt',        initials: 'K',  color: '#C43E3E', sort_order: 1, role: 'kid',    birthday: '02-07' },
+  { id: 'michaelann',  name: 'Michael-ann', initials: 'MA', color: '#993556', sort_order: 2, role: 'kid',    birthday: '01-29' },
+  { id: 'emma',        name: 'Emma',        initials: 'E',  color: '#534AB7', sort_order: 3, role: 'kid',    birthday: '02-14' },
+  { id: 'preston',     name: 'Preston',     initials: 'P',  color: '#185FA5', sort_order: 4, role: 'kid',    birthday: '11-25' },
+  { id: 'mom',         name: 'Mom',         initials: 'M',  color: '#0F6E56', sort_order: 5, role: 'parent', birthday: '08-15' },
+  { id: 'dad',         name: 'Dad',         initials: 'D',  color: '#6B7280', sort_order: 6, role: 'parent', birthday: '04-10' },
+  { id: 'jack',        name: 'Jack',        initials: 'J',  color: '#A0522D', sort_order: 7, role: 'pet',    birthday: '12-01' },
+  { id: 'shadow',      name: 'Shadow',      initials: 'S',  color: '#475569', sort_order: 8, role: 'pet',    birthday: '12-01' },
 ];
 
 const SEED_CHORES = {
@@ -183,7 +204,7 @@ export function seedIfEmpty() {
   const empty = row.c === 0;
 
   const insertKid = db.prepare(
-    'INSERT INTO kids (id, name, initials, color, sort_order, points_balance, role) VALUES (?, ?, ?, ?, ?, 0, ?)'
+    'INSERT INTO kids (id, name, initials, color, sort_order, points_balance, role, birthday) VALUES (?, ?, ?, ?, ?, 0, ?, ?)'
   );
   const insertChore = db.prepare(
     `INSERT INTO chores (id, kid_id, title, points, frequency, days_of_week, active, sort_order)
@@ -193,7 +214,7 @@ export function seedIfEmpty() {
   if (empty) {
     const tx = db.transaction(() => {
       for (const k of SEED_KIDS) {
-        insertKid.run(k.id, k.name, k.initials, k.color, k.sort_order, k.role);
+        insertKid.run(k.id, k.name, k.initials, k.color, k.sort_order, k.role, k.birthday);
         const chores = SEED_CHORES[k.id] || [];
         chores.forEach((c, i) => {
           insertChore.run(nanoid(), k.id, c.title, c.points, i + 1);
@@ -205,7 +226,7 @@ export function seedIfEmpty() {
     return;
   }
 
-  // Non-empty DB: add any seed members who don't exist yet (e.g. Mom/Dad on an older install).
+  // Non-empty DB: add any seed members who don't exist yet (e.g. Mom/Dad/pets on an older install).
   const existing = new Set(
     db.prepare('SELECT id FROM kids').all().map(r => r.id)
   );
@@ -213,12 +234,22 @@ export function seedIfEmpty() {
   if (missing.length > 0) {
     const tx = db.transaction(() => {
       for (const k of missing) {
-        insertKid.run(k.id, k.name, k.initials, k.color, k.sort_order, k.role);
+        insertKid.run(k.id, k.name, k.initials, k.color, k.sort_order, k.role, k.birthday);
       }
     });
     tx();
     console.log('[db] Added new family members:', missing.map(m => m.name).join(', '));
   }
+
+  // Back-fill birthdays for seeded members where the DB has them as NULL.
+  // Respects manual overrides — only fills NULLs.
+  const fillBirthday = db.prepare('UPDATE kids SET birthday = ? WHERE id = ? AND birthday IS NULL');
+  const tx2 = db.transaction(() => {
+    for (const k of SEED_KIDS) {
+      if (k.birthday) fillBirthday.run(k.birthday, k.id);
+    }
+  });
+  tx2();
 }
 
 // Re-apply the seed colors on every boot so color adjustments ship via git.
