@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Header from './components/Header.jsx';
 import TabNav from './components/TabNav.jsx';
+import { BoredModal, AskModal } from './components/QuickActions.jsx';
 import Today from './tabs/Today.jsx';
 import Chores from './tabs/Chores.jsx';
 import Calendar from './tabs/Calendar.jsx';
@@ -21,6 +22,8 @@ const TABS = [
 export default function App() {
   const [tab, setTab] = useState('today');
   const [kids, setKids] = useState([]);
+  const [boredOpen, setBoredOpen] = useState(false);
+  const [askOpen, setAskOpen]     = useState(false);
 
   async function loadKids() {
     try {
@@ -31,8 +34,6 @@ export default function App() {
   }
 
   useEffect(() => { loadKids(); }, []);
-
-  // Daily reset hook: reload on local midnight rollover (chores auto-reset via date-scoped completions)
   useEffect(() => {
     const id = setInterval(() => loadKids(), 60_000);
     return () => clearInterval(id);
@@ -40,7 +41,7 @@ export default function App() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-slate-100 text-slate-900 overflow-hidden">
-      <Header />
+      <Header onBored={() => setBoredOpen(true)} onAsk={() => setAskOpen(true)} />
       <TabNav tabs={TABS} current={tab} onChange={setTab} />
       <main className="flex-1 overflow-hidden">
         {tab === 'today'    && <Today    kids={kids} onKidsChange={loadKids} />}
@@ -50,6 +51,8 @@ export default function App() {
         {tab === 'points'   && <Points   kids={kids} onKidsChange={loadKids} />}
         {tab === 'admin'    && <Admin    kids={kids} onKidsChange={loadKids} />}
       </main>
+      {boredOpen && <BoredModal onClose={() => setBoredOpen(false)} />}
+      {askOpen   && <AskModal kids={kids} onClose={() => setAskOpen(false)} />}
     </div>
   );
 }

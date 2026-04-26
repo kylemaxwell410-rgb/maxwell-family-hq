@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, todayStr } from '../api.js';
 import { startOfDay, endOfDay, addDays } from '../utils/dateMath.js';
-import { fetchWeather, describeCode, getLocation, isWetForecast } from '../utils/weather.js';
+import { fetchWeather, describeCode, getLocation } from '../utils/weather.js';
 import { upcomingMixed } from '../utils/upcoming.js';
-import { suggestActivity } from '../utils/bored.js';
 import { fmtTime, fmtDateShort, fmtDayOfWeek } from '../utils/format.js';
+import { factForToday } from '../utils/funFacts.js';
 
 export default function Today({ kids: allKids, onKidsChange }) {
   const peopleForChores = useMemo(() => allKids.filter(k => k.role !== 'pet'), [allKids]);
@@ -18,8 +18,6 @@ export default function Today({ kids: allKids, onKidsChange }) {
   const [settings, setSettings]           = useState({});
   const [notes, setNotes]                 = useState([]);
   const [now, setNow]                     = useState(new Date());
-  const [boredOpen, setBoredOpen]         = useState(false);
-  const [askOpen, setAskOpen]             = useState(false);
   const dStr = todayStr();
 
   async function loadEverything() {
@@ -86,12 +84,13 @@ export default function Today({ kids: allKids, onKidsChange }) {
   const sortedToday    = useMemo(() => [...todayEvents].sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime)), [todayEvents]);
   const sortedTomorrow = useMemo(() => [...tomorrowEvents].sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime)), [tomorrowEvents]);
   const upcoming       = useMemo(() => upcomingMixed(allKids, 5), [allKids]);
-  const wetWeather     = useMemo(() => isWetForecast(weather), [weather]);
+  const fact           = useMemo(() => factForToday(now), [now]);
 
   return (
     <div className="h-full flex flex-col p-3 gap-3 overflow-hidden relative">
-      {/* Family notes strip (only renders when notes exist; tappable to dismiss requires PIN via Admin) */}
+      {/* Family notes strip + fun fact ribbon */}
       {notes.length > 0 && <NotesStrip notes={notes} />}
+      <FunFactStrip fact={fact} />
 
       {/* Top row: Weather, Today, Tomorrow, Dinner */}
       <div className="grid grid-cols-[1.1fr_1fr_1fr_1fr] gap-3 h-[230px] flex-shrink-0">
@@ -115,15 +114,16 @@ export default function Today({ kids: allKids, onKidsChange }) {
 
       {/* Bottom: combined upcoming countdown (left) + bedtime (right) */}
       <BottomStrip upcoming={upcoming} bedtime={settings.bedtime} now={now} />
+    </div>
+  );
+}
 
-      {/* Floating action buttons */}
-      <FloatingActions
-        onAsk={() => setAskOpen(true)}
-        onBored={() => setBoredOpen(true)}
-      />
-
-      {boredOpen && <BoredModal wet={wetWeather} onClose={() => setBoredOpen(false)} />}
-      {askOpen   && <AskModal kids={peopleForChores.filter(k => k.role === 'kid')} onClose={() => setAskOpen(false)} />}
+function FunFactStrip({ fact }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-xl flex-shrink-0">
+      <div className="text-base emoji flex-shrink-0">🤓</div>
+      <div className="text-[10px] uppercase tracking-wider text-indigo-700 font-semibold flex-shrink-0">Fun fact</div>
+      <div className="text-sm text-slate-800 truncate">{fact}</div>
     </div>
   );
 }
@@ -173,7 +173,7 @@ function WeatherCard({ weather, err }) {
             H {weather.today.highF}° · L {weather.today.lowF}°
           </div>
           <div className="text-[11px] text-slate-500 tabular-nums">
-            Rain: {weather.today.precipPct ?? 0}% · {fmtPrecip(weather.today.precipSum)} in
+            Rain: {weather.today.precipPct ?? 0}%{precipSuffix(weather.today.precipSum)}
           </div>
         </div>
       </div>
@@ -194,6 +194,12 @@ function fmtPrecip(inches) {
   return inches.toFixed(2);
 }
 
+// Render the inches suffix ONLY when meaningful precip is expected.
+function precipSuffix(inches) {
+  if (inches == null || inches < 0.01) return '';
+  return ` · ${fmtPrecip(inches)} in`;
+}
+
 function ForecastDay({ day, index }) {
   const desc = describeCode(day.code);
   const label = index === 0 ? 'Today' : index === 1 ? 'Tomorrow' :
@@ -207,7 +213,7 @@ function ForecastDay({ day, index }) {
         <span className="text-slate-400"> / {day.lowF}°</span>
       </div>
       <div className="text-[10px] text-slate-400 tabular-nums">
-        {day.precipPct == null ? '' : `${day.precipPct}% · ${fmtPrecip(day.precipSum)}″`}
+        {day.precipPct == null ? '' : `${day.precipPct}%${day.precipSum && day.precipSum >= 0.01 ? ` · ${fmtPrecip(day.precipSum)}″` : ''}`}
       </div>
     </div>
   );
@@ -438,176 +444,6 @@ function BedtimeCard({ bedtime, now }) {
         ) : (
           <div className="text-xs text-slate-400">Set bedtime in Admin</div>
         )}
-      </div>
-    </div>
-  );
-}
-
-/* =================== Floating actions =================== */
-
-function FloatingActions({ onAsk, onBored }) {
-  return (
-    <div className="absolute right-5 bottom-32 flex flex-col gap-3 z-30">
-      <button onClick={onBored}
-        className="px-5 h-14 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-900 shadow-lg flex items-center gap-2 font-semibold tap"
-        title="I'm Bored">
-        <span className="emoji text-2xl">💡</span>
-        <span>I'm Bored</span>
-      </button>
-      <button onClick={onAsk}
-        className="px-5 h-14 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg flex items-center gap-2 font-semibold tap"
-        title="Ask Max">
-        <span className="emoji text-2xl">💬</span>
-        <span>Ask Max</span>
-      </button>
-    </div>
-  );
-}
-
-/* =================== Bored modal =================== */
-
-function BoredModal({ wet, onClose }) {
-  const [idea, setIdea] = useState(() => suggestActivity({ wet }));
-  return (
-    <Modal onClose={onClose} title="Try this!">
-      <div className="px-1 py-2">
-        <div className="text-2xl mb-2 emoji">{wet ? '☔️' : '☀️'}</div>
-        <p className="text-xl font-semibold text-slate-900 leading-snug">{idea}</p>
-        <p className="text-xs text-slate-500 mt-2">{wet ? 'Indoor pick — looks wet today.' : 'Get outside!'}</p>
-      </div>
-      <div className="flex gap-2 mt-4">
-        <button onClick={() => setIdea(suggestActivity({ wet, prev: idea }))}
-          className="flex-1 py-3 bg-amber-400 hover:bg-amber-300 text-slate-900 rounded-xl font-semibold tap">
-          Another idea
-        </button>
-        <button onClick={onClose}
-          className="px-6 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-semibold tap">Close</button>
-      </div>
-    </Modal>
-  );
-}
-
-/* =================== Ask Claude modal =================== */
-
-function AskModal({ kids, onClose }) {
-  const [question, setQuestion] = useState('');
-  const [kidName, setKidName]   = useState(kids[0]?.name || '');
-  const [answer, setAnswer]     = useState('');
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState(null);
-  const [listening, setListening] = useState(false);
-  const recogRef = useRef(null);
-
-  // Web Speech API setup. Available in Chromium when launched with
-  // --use-fake-ui-for-media-stream (we add that flag in the Pi autostart).
-  const speechSupported = typeof window !== 'undefined' &&
-    !!(window.SpeechRecognition || window.webkitSpeechRecognition);
-
-  function toggleMic() {
-    if (!speechSupported) {
-      setError('Voice input not supported in this browser. Connect a USB mic and use a recent Chromium.');
-      return;
-    }
-    if (listening) {
-      recogRef.current?.stop();
-      return;
-    }
-    const Recog = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const r = new Recog();
-    r.lang = 'en-US';
-    r.interimResults = true;
-    r.continuous = false;
-    r.onresult = (ev) => {
-      let text = '';
-      for (let i = ev.resultIndex; i < ev.results.length; i++) {
-        text += ev.results[i][0].transcript;
-      }
-      setQuestion(prev => (prev ? prev.replace(/\s+$/, '') + ' ' : '') + text.trim());
-    };
-    r.onend = () => setListening(false);
-    r.onerror = (e) => { setListening(false); setError('Mic error: ' + e.error); };
-    recogRef.current = r;
-    setError(null);
-    setListening(true);
-    try { r.start(); } catch { setListening(false); }
-  }
-
-  async function ask() {
-    if (!question.trim()) return;
-    setLoading(true); setError(null); setAnswer('');
-    try {
-      const r = await api.askBot(question, kidName);
-      setAnswer(r.answer);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <Modal onClose={onClose} title="Ask Max">
-      <div className="space-y-3">
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Who's asking?</label>
-          <div className="flex flex-wrap gap-2">
-            {kids.map(k => (
-              <button key={k.id} onClick={() => setKidName(k.name)}
-                className={`px-3 py-2 rounded-lg text-sm font-semibold tap border
-                  ${kidName === k.name ? 'border-slate-400 bg-slate-100' : 'border-slate-200 hover:bg-slate-50'}`}>
-                {k.name}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">Your question</label>
-            {speechSupported && (
-              <button onClick={toggleMic}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold tap
-                  ${listening ? 'bg-rose-500 text-white animate-pulse' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}>
-                <span className="emoji">🎤</span>
-                {listening ? 'Listening…' : 'Voice'}
-              </button>
-            )}
-          </div>
-          <textarea
-            className="w-full bg-white border border-slate-300 rounded-xl p-3 text-base text-slate-900 min-h-[88px]"
-            placeholder={listening ? 'Listening — speak now' : 'What do you want to know?'}
-            value={question}
-            onChange={e => setQuestion(e.target.value)}
-            autoFocus
-          />
-        </div>
-        {answer && (
-          <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-slate-900 whitespace-pre-wrap text-sm">
-            {answer}
-          </div>
-        )}
-        {error && <div className="text-rose-600 text-sm">{error}</div>}
-      </div>
-      <div className="flex gap-2 mt-4">
-        <button onClick={ask} disabled={loading || !question.trim()}
-          className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl font-semibold tap">
-          {loading ? 'Thinking…' : answer ? 'Ask another' : 'Ask Max'}
-        </button>
-        <button onClick={onClose}
-          className="px-6 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-semibold tap">Close</button>
-      </div>
-    </Modal>
-  );
-}
-
-/* =================== Modal shell =================== */
-
-function Modal({ title, children, onClose }) {
-  return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-xl p-6 w-[560px] max-h-[90vh] overflow-auto"
-        onClick={e => e.stopPropagation()}>
-        {title && <h3 className="text-xl font-bold mb-3 text-slate-900">{title}</h3>}
-        {children}
       </div>
     </div>
   );

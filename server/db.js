@@ -180,7 +180,7 @@ const SEED_KIDS = [
   { id: 'michaelann',  name: 'Michael-ann', initials: 'MA', color: '#993556', sort_order: 2, role: 'kid',    birthday: '01-29' },
   { id: 'emma',        name: 'Emma',        initials: 'E',  color: '#534AB7', sort_order: 3, role: 'kid',    birthday: '02-14' },
   { id: 'preston',     name: 'Preston',     initials: 'P',  color: '#185FA5', sort_order: 4, role: 'kid',    birthday: '11-25' },
-  { id: 'mom',         name: 'Mom',         initials: 'M',  color: '#0F6E56', sort_order: 5, role: 'parent', birthday: '08-15' },
+  { id: 'mom',         name: 'Mom',         initials: 'M',  color: '#14B8A6', sort_order: 5, role: 'parent', birthday: '08-15' },
   { id: 'dad',         name: 'Dad',         initials: 'D',  color: '#6B7280', sort_order: 6, role: 'parent', birthday: '04-10' },
   { id: 'jack',        name: 'Jack',        initials: 'J',  color: '#A0522D', sort_order: 7, role: 'pet',    birthday: '12-01' },
   { id: 'shadow',      name: 'Shadow',      initials: 'S',  color: '#475569', sort_order: 8, role: 'pet',    birthday: '12-01' },
@@ -272,6 +272,7 @@ export function seedIfEmpty() {
 const PREVIOUS_COLORS = {
   kolt:    ['#185FA5'],                         // was blue, now red
   preston: ['#0F6E56'],                         // was teal, now blue
+  mom:     ['#0F6E56'],                         // was green, now teal
 };
 
 export function applySeedColorUpdates() {
