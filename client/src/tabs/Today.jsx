@@ -229,19 +229,36 @@ function ForecastDay({ day, index, size = 'sm' }) {
   const desc = describeCode(day.code);
   const label = index === 0 ? 'TODAY' : index === 1 ? 'TMRW' :
     fmtDayOfWeek(day.date + 'T12:00:00').toUpperCase();
-  const big = size === 'lg';
-  return (
-    <div className={`bg-slate-50 border border-slate-200 rounded-lg text-center
-      ${big ? 'px-2 py-3' : 'px-2 py-2'}`}>
-      <div className={`uppercase tracking-wide text-slate-500 font-semibold ${big ? 'text-base' : 'text-xs'}`}>{label}</div>
-      <div className={`leading-tight emoji ${big ? 'text-6xl my-1.5' : 'text-3xl my-0.5'}`}>{desc.emoji}</div>
-      <div className={`tabular-nums text-slate-700 leading-tight ${big ? 'text-xl' : 'text-base'}`}>
-        <span className="font-bold">{day.highF}°</span>
-        <span className="text-slate-400"> / {day.lowF}°</span>
+  if (size === 'lg') {
+    // Big tile (top row): vertical stack — day label, emoji, hi/lo, rain.
+    return (
+      <div className="bg-slate-50 border border-slate-200 rounded-lg text-center px-2 py-3">
+        <div className="text-base uppercase tracking-wide text-slate-500 font-semibold">{label}</div>
+        <div className="text-6xl emoji my-1.5 leading-tight">{desc.emoji}</div>
+        <div className="text-xl tabular-nums text-slate-700 leading-tight">
+          <span className="font-bold">{day.highF}°</span>
+          <span className="text-slate-400"> / {day.lowF}°</span>
+        </div>
+        {day.precipPct != null && day.precipPct >= 10 && (
+          <div className="text-base text-slate-500 tabular-nums font-semibold">{day.precipPct}% rain</div>
+        )}
       </div>
-      {day.precipPct != null && day.precipPct >= 10 && (
-        <div className={`text-slate-500 tabular-nums font-semibold ${big ? 'text-base' : 'text-xs'}`}>{day.precipPct}%{big ? ' rain' : ''}</div>
-      )}
+    );
+  }
+  // Small tile (bottom row): horizontal — emoji left, day + temps + rain stacked right.
+  return (
+    <div className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-2 flex items-center gap-2">
+      <div className="text-4xl emoji flex-shrink-0 leading-none">{desc.emoji}</div>
+      <div className="flex-1 min-w-0 leading-tight">
+        <div className="text-xs uppercase tracking-wide text-slate-500 font-semibold">{label}</div>
+        <div className="text-base tabular-nums text-slate-700">
+          <span className="font-bold">{day.highF}°</span>
+          <span className="text-slate-400"> / {day.lowF}°</span>
+        </div>
+        {day.precipPct != null && day.precipPct >= 10 && (
+          <div className="text-xs text-slate-500 tabular-nums font-semibold">{day.precipPct}%</div>
+        )}
+      </div>
     </div>
   );
 }
