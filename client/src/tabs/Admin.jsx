@@ -235,6 +235,7 @@ function KidModal({ kid, onSave, onClose }) {
     color: kid.color,
     sort_order: kid.sort_order,
     role: kid.role || 'kid',
+    birthday: kid.birthday || '',
   });
   return (
     <Modal>
@@ -264,6 +265,11 @@ function KidModal({ kid, onSave, onClose }) {
         <FieldRow label="Sort order">
           <input type="number" className="input" value={f.sort_order}
             onChange={e => setF({ ...f, sort_order: Number(e.target.value) })} />
+        </FieldRow>
+        <FieldRow label="Birthday (YYYY-MM-DD or MM-DD)">
+          <input className="input" placeholder="2014-07-20 or 07-20"
+            value={f.birthday}
+            onChange={e => setF({ ...f, birthday: e.target.value })} />
         </FieldRow>
       </div>
       <div className="flex gap-2 mt-6">

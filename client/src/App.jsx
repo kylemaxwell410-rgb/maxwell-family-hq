@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Header from './components/Header.jsx';
 import TabNav from './components/TabNav.jsx';
+import Today from './tabs/Today.jsx';
 import Chores from './tabs/Chores.jsx';
 import Calendar from './tabs/Calendar.jsx';
 import Meals from './tabs/Meals.jsx';
@@ -9,6 +10,7 @@ import Admin from './tabs/Admin.jsx';
 import { api } from './api.js';
 
 const TABS = [
+  { id: 'today',    label: 'Today' },
   { id: 'chores',   label: 'Chores' },
   { id: 'calendar', label: 'Calendar' },
   { id: 'meals',    label: 'Meals' },
@@ -17,7 +19,7 @@ const TABS = [
 ];
 
 export default function App() {
-  const [tab, setTab] = useState('chores');
+  const [tab, setTab] = useState('today');
   const [kids, setKids] = useState([]);
 
   async function loadKids() {
@@ -41,6 +43,7 @@ export default function App() {
       <Header />
       <TabNav tabs={TABS} current={tab} onChange={setTab} />
       <main className="flex-1 overflow-hidden">
+        {tab === 'today'    && <Today    kids={kids} />}
         {tab === 'chores'   && <Chores   kids={kids} onKidsChange={loadKids} />}
         {tab === 'calendar' && <Calendar kids={kids} />}
         {tab === 'meals'    && <Meals    />}

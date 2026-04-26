@@ -123,6 +123,24 @@ export function initSchema() {
     db.exec("ALTER TABLE kids ADD COLUMN role TEXT NOT NULL DEFAULT 'kid'");
     console.log('[db] added role column to kids');
   }
+
+  // Idempotent migration: add birthday column (TEXT, nullable; "MM-DD" or "YYYY-MM-DD").
+  try {
+    db.prepare('SELECT birthday FROM kids LIMIT 1').get();
+  } catch {
+    db.exec('ALTER TABLE kids ADD COLUMN birthday TEXT');
+    console.log('[db] added birthday column to kids');
+  }
+
+  // Family notes (Chunk 2 hook — table created now so the API surface is stable).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS family_notes (
+      id TEXT PRIMARY KEY,
+      body TEXT NOT NULL,
+      expires_on TEXT,
+      created_at TEXT NOT NULL
+    );
+  `);
 }
 
 const SEED_KIDS = [

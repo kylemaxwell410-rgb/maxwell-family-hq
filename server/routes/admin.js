@@ -21,15 +21,21 @@ router.post('/verify', (req, res) => {
 router.put('/kids/:id', requirePin, (req, res) => {
   const row = db.prepare('SELECT * FROM kids WHERE id = ?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Not found' });
-  const { name, initials, color, sort_order, role } = req.body || {};
+  const { name, initials, color, sort_order, role, birthday } = req.body || {};
+  // birthday: '' clears it; undefined leaves it; 'MM-DD' or 'YYYY-MM-DD' sets it.
+  const nextBirthday =
+    birthday === undefined ? row.birthday :
+    birthday === '' ? null :
+    birthday;
   db.prepare(
-    'UPDATE kids SET name = ?, initials = ?, color = ?, sort_order = ?, role = ? WHERE id = ?'
+    'UPDATE kids SET name = ?, initials = ?, color = ?, sort_order = ?, role = ?, birthday = ? WHERE id = ?'
   ).run(
     name ?? row.name,
     initials ?? row.initials,
     color ?? row.color,
     sort_order ?? row.sort_order,
     role ?? row.role ?? 'kid',
+    nextBirthday,
     req.params.id
   );
   res.json(db.prepare('SELECT * FROM kids WHERE id = ?').get(req.params.id));
