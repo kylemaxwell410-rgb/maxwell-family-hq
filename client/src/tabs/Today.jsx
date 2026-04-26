@@ -182,34 +182,32 @@ function WeatherCard({ weather, err }) {
         </div>
         <div className="text-3xl emoji">{desc.emoji}</div>
       </div>
-      <div className="mt-1 flex items-center gap-4">
-        <div className="text-7xl font-extrabold tabular-nums leading-none text-slate-900">{weather.current.tempF}°</div>
-        <div>
-          <div className="text-lg text-slate-700 font-semibold">{desc.label}</div>
-          <div className="text-sm text-slate-500 tabular-nums">
-            H {weather.today.highF}° · L {weather.today.lowF}°
-          </div>
-          <div className="text-sm text-slate-500 tabular-nums">
+
+      {/* Top: temperature on the left, 3 big forecast tiles on the right */}
+      <div className="mt-2 grid grid-cols-[auto_1fr] gap-4 items-stretch">
+        <div className="flex flex-col justify-center">
+          <div className="text-6xl font-extrabold tabular-nums leading-none text-slate-900">{weather.current.tempF}°</div>
+          <div className="mt-1 text-base text-slate-700 font-semibold leading-tight">{desc.label}</div>
+          <div className="text-xs text-slate-500 tabular-nums">H {weather.today.highF}° · L {weather.today.lowF}°</div>
+          <div className="text-xs text-slate-500 tabular-nums">
             Rain: {weather.today.precipPct ?? 0}%{precipSuffix(weather.today.precipSum)}
           </div>
         </div>
-      </div>
-
-      {/* Forecast: top row 3 big tiles (today/tomorrow/day-after), bottom row 4 smaller */}
-      <div className="mt-auto pt-2 space-y-2">
         <div className="grid grid-cols-3 gap-2">
           {weather.forecast.slice(0, 3).map((d, i) => (
             <ForecastDay key={d.date} day={d} index={i} size="lg" />
           ))}
         </div>
-        {weather.forecast.length > 3 && (
-          <div className="grid grid-cols-4 gap-1.5">
-            {weather.forecast.slice(3, 7).map((d) => (
-              <ForecastDay key={d.date} day={d} index={-1} size="sm" />
-            ))}
-          </div>
-        )}
       </div>
+
+      {/* Bottom: 4 small forecast tiles full-width */}
+      {weather.forecast.length > 3 && (
+        <div className="mt-2 grid grid-cols-4 gap-1.5">
+          {weather.forecast.slice(3, 7).map((d) => (
+            <ForecastDay key={d.date} day={d} index={-1} size="sm" />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
