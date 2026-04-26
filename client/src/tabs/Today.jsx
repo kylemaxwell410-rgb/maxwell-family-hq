@@ -449,14 +449,16 @@ function FloatingActions({ onAsk, onBored }) {
   return (
     <div className="absolute right-5 bottom-32 flex flex-col gap-3 z-30">
       <button onClick={onBored}
-        className="w-16 h-16 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-900 shadow-lg flex items-center justify-center text-2xl tap"
-        title="I'm bored — give me an idea!">
-        <span className="emoji">💡</span>
+        className="px-5 h-14 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-900 shadow-lg flex items-center gap-2 font-semibold tap"
+        title="I'm Bored">
+        <span className="emoji text-2xl">💡</span>
+        <span>I'm Bored</span>
       </button>
       <button onClick={onAsk}
-        className="w-16 h-16 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg flex items-center justify-center text-2xl tap"
-        title="Ask Claude a question">
-        <span className="emoji">💬</span>
+        className="px-5 h-14 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg flex items-center gap-2 font-semibold tap"
+        title="Ask Max">
+        <span className="emoji text-2xl">💬</span>
+        <span>Ask Max</span>
       </button>
     </div>
   );
@@ -493,6 +495,42 @@ function AskModal({ kids, onClose }) {
   const [answer, setAnswer]     = useState('');
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
+  const [listening, setListening] = useState(false);
+  const recogRef = useRef(null);
+
+  // Web Speech API setup. Available in Chromium when launched with
+  // --use-fake-ui-for-media-stream (we add that flag in the Pi autostart).
+  const speechSupported = typeof window !== 'undefined' &&
+    !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+  function toggleMic() {
+    if (!speechSupported) {
+      setError('Voice input not supported in this browser. Connect a USB mic and use a recent Chromium.');
+      return;
+    }
+    if (listening) {
+      recogRef.current?.stop();
+      return;
+    }
+    const Recog = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const r = new Recog();
+    r.lang = 'en-US';
+    r.interimResults = true;
+    r.continuous = false;
+    r.onresult = (ev) => {
+      let text = '';
+      for (let i = ev.resultIndex; i < ev.results.length; i++) {
+        text += ev.results[i][0].transcript;
+      }
+      setQuestion(prev => (prev ? prev.replace(/\s+$/, '') + ' ' : '') + text.trim());
+    };
+    r.onend = () => setListening(false);
+    r.onerror = (e) => { setListening(false); setError('Mic error: ' + e.error); };
+    recogRef.current = r;
+    setError(null);
+    setListening(true);
+    try { r.start(); } catch { setListening(false); }
+  }
 
   async function ask() {
     if (!question.trim()) return;
@@ -508,7 +546,7 @@ function AskModal({ kids, onClose }) {
   }
 
   return (
-    <Modal onClose={onClose} title="Ask Claude">
+    <Modal onClose={onClose} title="Ask Max">
       <div className="space-y-3">
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Who's asking?</label>
@@ -523,10 +561,20 @@ function AskModal({ kids, onClose }) {
           </div>
         </div>
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Your question</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">Your question</label>
+            {speechSupported && (
+              <button onClick={toggleMic}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold tap
+                  ${listening ? 'bg-rose-500 text-white animate-pulse' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}>
+                <span className="emoji">🎤</span>
+                {listening ? 'Listening…' : 'Voice'}
+              </button>
+            )}
+          </div>
           <textarea
             className="w-full bg-white border border-slate-300 rounded-xl p-3 text-base text-slate-900 min-h-[88px]"
-            placeholder="What do you want to know?"
+            placeholder={listening ? 'Listening — speak now' : 'What do you want to know?'}
             value={question}
             onChange={e => setQuestion(e.target.value)}
             autoFocus
@@ -542,7 +590,7 @@ function AskModal({ kids, onClose }) {
       <div className="flex gap-2 mt-4">
         <button onClick={ask} disabled={loading || !question.trim()}
           className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl font-semibold tap">
-          {loading ? 'Thinking…' : answer ? 'Ask another' : 'Ask'}
+          {loading ? 'Thinking…' : answer ? 'Ask another' : 'Ask Max'}
         </button>
         <button onClick={onClose}
           className="px-6 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-semibold tap">Close</button>
