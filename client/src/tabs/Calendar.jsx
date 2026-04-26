@@ -99,7 +99,7 @@ export default function Calendar({ kids }) {
           {VIEWS.map(v => (
             <button key={v.id} onClick={() => setView(v.id)}
               className={`px-5 py-3 rounded-xl text-base font-semibold tap
-                ${view === v.id ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5'}`}>
+                ${view === v.id ? 'bg-slate-200 text-white' : 'text-slate-500 hover:bg-slate-100'}`}>
               {v.label}
             </button>
           ))}
@@ -109,7 +109,7 @@ export default function Calendar({ kids }) {
           <button
             onClick={() => setFilterKid(null)}
             className={`px-4 py-2 rounded-full text-sm font-semibold tap transition
-              ${filterKid === null ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5'}`}>
+              ${filterKid === null ? 'bg-slate-200 text-white' : 'text-slate-500 hover:bg-slate-100'}`}>
             Everyone
           </button>
           {kids.map(k => {
@@ -118,11 +118,11 @@ export default function Calendar({ kids }) {
               <button key={k.id} onClick={() => setFilterKid(on ? null : k.id)}
                 className="group flex items-center gap-2 tap"
                 title={k.name}>
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-bold border-2 transition
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-bold border-2 transition text-white
                   ${on ? 'scale-110' : 'opacity-60 hover:opacity-100'}`}
                   style={{
                     background: k.color,
-                    borderColor: on ? '#fff' : 'transparent',
+                    borderColor: on ? '#0f172a' : 'transparent',
                   }}>
                   {k.initials}
                 </div>
@@ -135,7 +135,7 @@ export default function Calendar({ kids }) {
           title: '', start_datetime: new Date().toISOString().slice(0,16),
           end_datetime: '', kid_id: '', notes: '', all_day: false,
         })}
-          className="px-6 py-3 bg-white/10 hover:bg-white/15 rounded-xl font-semibold tap">
+          className="px-6 py-3 bg-slate-200 hover:bg-white/15 rounded-xl font-semibold tap">
           + New event
         </button>
       </div>
@@ -178,8 +178,8 @@ function DaySection({ date, events, kidMap, onEdit }) {
   const isToday = sameDay(date, new Date());
   return (
     <section>
-      <div className="flex items-baseline gap-3 mb-3 pb-2 border-b border-white/10">
-        <h2 className={`text-2xl font-extrabold tracking-tight ${isToday ? 'text-white' : 'text-slate-300'}`}>
+      <div className="flex items-baseline gap-3 mb-3 pb-2 border-b border-slate-300">
+        <h2 className={`text-2xl font-extrabold tracking-tight ${isToday ? 'text-white' : 'text-slate-700'}`}>
           {dayLabel(date)}
         </h2>
         <span className="text-slate-500 text-sm">{dateSubtitle(date)}</span>
@@ -207,7 +207,7 @@ function EventCard({ event, kid, onEdit }) {
   return (
     <button
       onClick={() => onEdit(event)}
-      className="group text-left flex gap-3 rounded-2xl border border-white/5 p-4 tap hover:border-white/20 transition"
+      className="group text-left flex gap-3 rounded-2xl border border-slate-200 p-4 tap hover:border-slate-300 transition"
       style={{ background: bg }}
     >
       <div className="w-1.5 self-stretch rounded-full" style={{ background: stripe }} />
@@ -215,7 +215,7 @@ function EventCard({ event, kid, onEdit }) {
         <div className="flex items-baseline gap-2 mb-0.5">
           <div className="text-lg font-semibold truncate">{event.title}</div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-slate-300">
+        <div className="flex items-center gap-2 text-sm text-slate-700">
           <span className="tabular-nums font-medium">{fmtTime(event.start_datetime, event.all_day)}</span>
           {kid && (
             <>
@@ -225,7 +225,7 @@ function EventCard({ event, kid, onEdit }) {
           )}
         </div>
         {event.notes && (
-          <div className="text-xs text-slate-400 mt-1.5 line-clamp-2">{event.notes}</div>
+          <div className="text-xs text-slate-500 mt-1.5 line-clamp-2">{event.notes}</div>
         )}
       </div>
     </button>
@@ -256,8 +256,8 @@ function EventModal({ event, kids, onSave, onDelete, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="bg-[#111923] border border-white/10 rounded-2xl p-6 w-[560px] max-h-[90vh] overflow-auto">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+      <div className="bg-white border border-slate-300 rounded-2xl p-6 w-[560px] max-h-[90vh] overflow-auto">
         <h3 className="text-xl font-bold mb-4">{event.id ? 'Edit event' : 'New event'}</h3>
         <div className="space-y-3">
           <Field label="Title">
@@ -281,7 +281,7 @@ function EventModal({ event, kids, onSave, onDelete, onClose }) {
                 type="button"
                 onClick={() => setForm({ ...form, kid_id: '' })}
                 className={`px-4 py-2 rounded-full text-sm font-semibold tap border
-                  ${!form.kid_id ? 'bg-white/15 border-white/25 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'}`}>
+                  ${!form.kid_id ? 'bg-white/15 border-slate-400 text-white' : 'border-slate-300 text-slate-500 hover:bg-slate-100'}`}>
                 Family
               </button>
               {kids.map(k => {
@@ -290,8 +290,8 @@ function EventModal({ event, kids, onSave, onDelete, onClose }) {
                   <button key={k.id} type="button"
                     onClick={() => setForm({ ...form, kid_id: k.id })}
                     className={`px-4 py-2 rounded-full text-sm font-semibold tap border transition
-                      ${on ? 'text-white' : 'text-slate-400 hover:bg-white/5'}`}
-                    style={on ? { background: k.color + '33', borderColor: k.color } : { borderColor: 'rgba(255,255,255,0.1)' }}>
+                      ${on ? 'text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+                    style={on ? { background: k.color + '22', borderColor: k.color } : { borderColor: '#e5e7eb' }}>
                     {k.name}
                   </button>
                 );
@@ -315,13 +315,13 @@ function EventModal({ event, kids, onSave, onDelete, onClose }) {
             className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold tap">Save</button>
           {onDelete && (
             <button onClick={onDelete}
-              className="px-6 py-3 bg-rose-700 hover:bg-rose-600 rounded-xl font-semibold tap">Delete</button>
+              className="px-6 py-3 bg-rose-600 hover:bg-rose-600 rounded-xl font-semibold tap">Delete</button>
           )}
           <button onClick={onClose}
-            className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold tap">Cancel</button>
+            className="px-6 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-semibold tap">Cancel</button>
         </div>
       </div>
-      <style>{`.input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;color:#e6edf3;font-size:15px;min-height:44px}`}</style>
+      <style>{`.input{width:100%;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;color:#0f172a;font-size:15px;min-height:44px}`}</style>
     </div>
   );
 }
@@ -329,7 +329,7 @@ function EventModal({ event, kids, onSave, onDelete, onClose }) {
 function Field({ label, children }) {
   return (
     <div>
-      <label className="block text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">{label}</label>
+      <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">{label}</label>
       {children}
     </div>
   );

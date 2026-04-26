@@ -60,7 +60,7 @@ export default function Chores({ kids: allKids, onKidsChange }) {
   }, [events, kids]);
 
   if (loading && !chores.length) {
-    return <div className="p-8 text-slate-400">Loading chores…</div>;
+    return <div className="p-8 text-slate-500">Loading chores…</div>;
   }
 
   return (
@@ -82,27 +82,27 @@ export default function Chores({ kids: allKids, onKidsChange }) {
           return (
             <div key={kid.id}
               className={`flex flex-col rounded-2xl border overflow-hidden transition
-                ${allDone ? 'border-white/20' : 'border-white/5'}
-                bg-[#111923]`}
+                ${allDone ? 'border-slate-300' : 'border-slate-200'}
+                bg-white`}
               style={{ boxShadow: `inset 0 3px 0 0 ${kid.color}` }}>
               {/* Header */}
               <div className="px-4 pt-3 pb-2 flex items-center justify-between"
                 style={{ background: `linear-gradient(180deg, ${kid.color}33 0%, transparent 100%)` }}>
                 <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white"
                     style={{ background: kid.color }}>
                     {kid.initials}
                   </div>
                   <div>
                     <div className="text-lg font-bold leading-tight">{kid.name}</div>
-                    <div className="text-[11px] text-slate-400 leading-tight">
+                    <div className="text-[11px] text-slate-500 leading-tight">
                       {total === 0 ? 'No chores today' : `${done}/${total} done${isParent ? '' : ` · ${earnedPoints}/${possiblePoints} pts`}`}
                     </div>
                   </div>
                 </div>
                 {!isParent && (
                   <div className="text-right">
-                    <div className="text-[10px] text-slate-400 uppercase tracking-wide leading-none">Balance</div>
+                    <div className="text-[10px] text-slate-500 uppercase tracking-wide leading-none">Balance</div>
                     <div className="text-2xl font-bold tabular-nums leading-tight">{kid.points_balance}</div>
                   </div>
                 )}
@@ -124,11 +124,11 @@ export default function Chores({ kids: allKids, onKidsChange }) {
                         onClick={() => toggle(c)}
                         className={`w-full flex items-center gap-2.5 p-2.5 rounded-xl transition tap text-left
                           ${c.completed
-                            ? 'bg-white/5 text-slate-500 line-through'
-                            : 'bg-white/5 hover:bg-white/10'}`}
+                            ? 'bg-slate-100 text-slate-500 line-through'
+                            : 'bg-slate-100 hover:bg-slate-200'}`}
                       >
                         <div className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center flex-shrink-0
-                          ${c.completed ? 'border-transparent' : 'border-white/20'}`}
+                          ${c.completed ? 'border-transparent' : 'border-slate-300'}`}
                           style={c.completed ? { background: kid.color } : {}}>
                           {c.completed && (
                             <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="white" strokeWidth="3">
@@ -141,7 +141,7 @@ export default function Chores({ kids: allKids, onKidsChange }) {
                         </div>
                         {!isParent && (
                           <div className="text-xs font-semibold px-2 py-0.5 rounded-md"
-                            style={{ background: kid.color + '33', color: c.completed ? '#64748b' : '#fff' }}>
+                            style={{ background: kid.color + '22', color: c.completed ? '#94a3b8' : kid.color }}>
                             +{c.points}
                           </div>
                         )}
@@ -172,7 +172,7 @@ function FreeTimeCard({ person, events }) {
         <div className="text-base font-bold" style={{ color: person.color }}>
           Free time!
         </div>
-        <div className="text-[11px] text-slate-400 uppercase tracking-wide">
+        <div className="text-[11px] text-slate-500 uppercase tracking-wide">
           All chores done
         </div>
       </div>
@@ -195,7 +195,7 @@ function EventGroup({ label, events, color }) {
       ) : (
         <div className="space-y-1">
           {events.map(e => (
-            <div key={e.id} className="flex gap-2 items-start bg-white/[0.03] rounded-md px-2 py-1.5">
+            <div key={e.id} className="flex gap-2 items-start bg-slate-50 rounded-md px-2 py-1.5">
               <div className="w-1 self-stretch rounded-full flex-shrink-0" style={{ background: color }} />
               <div className="flex-1 min-w-0">
                 <div className="text-[13px] font-medium truncate">{e.title}</div>

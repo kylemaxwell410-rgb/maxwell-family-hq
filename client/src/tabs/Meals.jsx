@@ -71,18 +71,18 @@ export default function Meals() {
           <h2 className="text-xl font-bold">Weekly meals</h2>
           <div className="flex gap-2">
             <button onClick={() => setWeekOffset(w => w - 1)}
-              className="px-4 py-2 bg-white/5 rounded-lg tap">←</button>
+              className="px-4 py-2 bg-slate-100 rounded-lg tap">←</button>
             <button onClick={() => setWeekOffset(0)}
-              className="px-4 py-2 bg-white/5 rounded-lg tap text-sm">This week</button>
+              className="px-4 py-2 bg-slate-100 rounded-lg tap text-sm">This week</button>
             <button onClick={() => setWeekOffset(w => w + 1)}
-              className="px-4 py-2 bg-white/5 rounded-lg tap">→</button>
+              className="px-4 py-2 bg-slate-100 rounded-lg tap">→</button>
           </div>
         </div>
-        <div className="flex-1 grid grid-cols-8 gap-1 overflow-auto bg-[#111923] border border-white/5 rounded-2xl p-2">
+        <div className="flex-1 grid grid-cols-8 gap-1 overflow-auto bg-white border border-slate-200 rounded-2xl p-2">
           <div></div>
           {days.map(d => (
             <div key={d.toISOString()} className="text-center py-2">
-              <div className="text-xs uppercase text-slate-400 font-semibold">
+              <div className="text-xs uppercase text-slate-500 font-semibold">
                 {d.toLocaleDateString(undefined, { weekday: 'short' })}
               </div>
               <div className="text-base font-bold">{d.getDate()}</div>
@@ -90,7 +90,7 @@ export default function Meals() {
           ))}
           {MEAL_TYPES.map(type => (
             <div key={type} className="contents">
-              <div className="flex items-center justify-end pr-3 text-sm font-semibold text-slate-400 capitalize">
+              <div className="flex items-center justify-end pr-3 text-sm font-semibold text-slate-500 capitalize">
                 {type}
               </div>
               {days.map(d => {
@@ -101,7 +101,7 @@ export default function Meals() {
                   <button
                     key={key}
                     onClick={() => setEditing({ date, type, description: entry?.description || '' })}
-                    className="min-h-[88px] rounded-lg p-2 text-sm bg-white/5 hover:bg-white/10 tap text-left"
+                    className="min-h-[88px] rounded-lg p-2 text-sm bg-slate-100 hover:bg-slate-200 tap text-left"
                   >
                     <div className="text-slate-200 line-clamp-3">
                       {entry?.description || <span className="text-slate-500">—</span>}
@@ -114,8 +114,8 @@ export default function Meals() {
         </div>
       </section>
 
-      <aside className="w-[360px] flex flex-col bg-[#111923] border border-white/5 rounded-2xl overflow-hidden">
-        <div className="p-4 border-b border-white/5">
+      <aside className="w-[360px] flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <div className="p-4 border-b border-slate-200">
           <h2 className="text-xl font-bold mb-3">Shopping list</h2>
           <div className="flex gap-2">
             <input
@@ -123,7 +123,7 @@ export default function Meals() {
               onChange={e => setNewItem(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && addItem()}
               placeholder="Add item…"
-              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm"
+              className="flex-1 bg-slate-100 border border-slate-300 rounded-lg px-3 py-2 text-sm"
             />
             <button onClick={addItem}
               className="px-4 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold tap">+</button>
@@ -134,22 +134,22 @@ export default function Meals() {
             <div className="text-slate-500 text-center py-8 text-sm">List is empty</div>
           )}
           {shopping.map(it => (
-            <div key={it.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5">
+            <div key={it.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100">
               <button onClick={() => toggleItem(it)}
                 className={`w-9 h-9 rounded-md border-2 flex items-center justify-center flex-shrink-0 tap
-                  ${it.checked ? 'bg-emerald-600 border-emerald-600' : 'border-white/20'}`}>
+                  ${it.checked ? 'bg-emerald-600 border-emerald-600' : 'border-slate-300'}`}>
                 {it.checked && <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="white" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>}
               </button>
               <div className={`flex-1 text-sm ${it.checked ? 'text-slate-500 line-through' : ''}`}>{it.item}</div>
               <button onClick={() => deleteItem(it.id)}
-                className="w-9 h-9 rounded-md hover:bg-white/10 text-slate-500 tap">×</button>
+                className="w-9 h-9 rounded-md hover:bg-slate-200 text-slate-500 tap">×</button>
             </div>
           ))}
         </div>
         {shopping.some(s => s.checked) && (
-          <div className="p-3 border-t border-white/5">
+          <div className="p-3 border-t border-slate-200">
             <button onClick={clearDone}
-              className="w-full py-2 text-sm bg-white/5 hover:bg-white/10 rounded-lg tap">
+              className="w-full py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg tap">
               Clear checked
             </button>
           </div>
@@ -169,21 +169,21 @@ export default function Meals() {
 function MealEditModal({ editing, onSave, onClose }) {
   const [val, setVal] = useState(editing.description || '');
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="bg-[#111923] border border-white/10 rounded-2xl p-6 w-[480px]">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+      <div className="bg-white border border-slate-300 rounded-2xl p-6 w-[480px]">
         <h3 className="text-lg font-bold mb-1 capitalize">{editing.type}</h3>
-        <p className="text-sm text-slate-400 mb-4">{editing.date}</p>
+        <p className="text-sm text-slate-500 mb-4">{editing.date}</p>
         <textarea
           value={val}
           onChange={e => setVal(e.target.value)}
           placeholder="What's on the menu?"
-          className="w-full min-h-[120px] bg-white/5 border border-white/10 rounded-lg px-3 py-2"
+          className="w-full min-h-[120px] bg-slate-100 border border-slate-300 rounded-lg px-3 py-2"
         />
         <div className="flex gap-2 mt-4">
           <button onClick={() => onSave(val)}
             className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold tap">Save</button>
           <button onClick={onClose}
-            className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold tap">Cancel</button>
+            className="px-6 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-semibold tap">Cancel</button>
         </div>
       </div>
     </div>

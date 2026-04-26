@@ -20,6 +20,10 @@ app.use(express.json({ limit: '1mb' }));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
+// Bumped on every server start; the kiosk client polls and reloads on change so deploys auto-refresh.
+const SERVER_START = new Date().toISOString();
+app.get('/api/version', (_req, res) => res.json({ start: SERVER_START }));
+
 app.use('/api/kids', kidsRouter);
 app.use('/api/chores', choresRouter);
 app.use('/api/events', eventsRouter);

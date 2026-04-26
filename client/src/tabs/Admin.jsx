@@ -62,20 +62,20 @@ export default function Admin({ kids, onKidsChange }) {
         {['chores','kids','points','settings'].map(s => (
           <button key={s} onClick={() => setSection(s)}
             className={`px-4 py-3 rounded-xl font-semibold capitalize text-left tap
-              ${section === s ? 'bg-white/10' : 'hover:bg-white/5 text-slate-400'}`}>
+              ${section === s ? 'bg-slate-200' : 'hover:bg-slate-100 text-slate-500'}`}>
             {s}
           </button>
         ))}
         <button onClick={() => setPin(null)}
-          className="mt-auto px-4 py-3 rounded-xl font-semibold text-left text-rose-400 hover:bg-white/5 tap">
+          className="mt-auto px-4 py-3 rounded-xl font-semibold text-left text-rose-600 hover:bg-slate-100 tap">
           Lock
         </button>
       </nav>
 
-      <section className="flex-1 bg-[#111923] border border-white/5 rounded-2xl overflow-hidden flex flex-col">
+      <section className="flex-1 bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col">
         {section === 'chores' && (
           <>
-            <div className="p-4 border-b border-white/5 flex justify-between items-center">
+            <div className="p-4 border-b border-slate-200 flex justify-between items-center">
               <h2 className="text-xl font-bold">All chores</h2>
               <button onClick={() => setEditing({
                 _type: 'chore', kid_id: kids[0]?.id || '', title: '', points: 1,
@@ -85,14 +85,14 @@ export default function Admin({ kids, onKidsChange }) {
                 + New chore
               </button>
             </div>
-            <div className="flex-1 overflow-auto divide-y divide-white/5">
+            <div className="flex-1 overflow-auto divide-y divide-slate-200">
               {chores.map(c => (
                 <button key={c.id} onClick={() => setEditing({ _type:'chore', ...c })}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-white/5 tap text-left">
+                  className="w-full flex items-center gap-3 p-3 hover:bg-slate-100 tap text-left">
                   <div className="w-2 h-10 rounded-full" style={{ background: c.kid_color }} />
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold truncate">{c.title}</div>
-                    <div className="text-xs text-slate-400">{c.kid_name} · {c.active ? 'Active' : 'Inactive'} · {daysLabel(c.days_of_week)}</div>
+                    <div className="text-xs text-slate-500">{c.kid_name} · {c.active ? 'Active' : 'Inactive'} · {daysLabel(c.days_of_week)}</div>
                   </div>
                   <div className="font-bold text-lg tabular-nums">+{c.points}</div>
                 </button>
@@ -103,22 +103,22 @@ export default function Admin({ kids, onKidsChange }) {
 
         {section === 'kids' && (
           <>
-            <div className="p-4 border-b border-white/5"><h2 className="text-xl font-bold">Family</h2></div>
+            <div className="p-4 border-b border-slate-200"><h2 className="text-xl font-bold">Family</h2></div>
             <div className="p-4 grid grid-cols-3 gap-3 overflow-auto">
               {kids.map(k => (
                 <button key={k.id} onClick={() => setEditing({ _type:'kid', ...k })}
-                  className="p-4 rounded-xl hover:bg-white/5 tap text-left border border-white/5"
+                  className="p-4 rounded-xl hover:bg-slate-100 tap text-left border border-slate-200"
                   style={{ background: k.color + '22' }}>
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{ background: k.color }}>{k.initials}</div>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white" style={{ background: k.color }}>{k.initials}</div>
                     <div className="flex-1 min-w-0">
                       <div className="font-bold truncate">{k.name}</div>
-                      <div className="text-[10px] uppercase tracking-wide text-slate-400">
+                      <div className="text-[10px] uppercase tracking-wide text-slate-500">
                         {k.role === 'parent' ? 'Parent' : 'Kid'}
                       </div>
                     </div>
                   </div>
-                  <div className="text-xs text-slate-400">{k.color} · order {k.sort_order}</div>
+                  <div className="text-xs text-slate-500">{k.color} · order {k.sort_order}</div>
                 </button>
               ))}
             </div>
@@ -131,7 +131,7 @@ export default function Admin({ kids, onKidsChange }) {
 
         {section === 'points' && (
           <>
-            <div className="p-4 border-b border-white/5 flex justify-between items-center">
+            <div className="p-4 border-b border-slate-200 flex justify-between items-center">
               <h2 className="text-xl font-bold">Manual adjustment</h2>
               <button onClick={() => {
                 const first = kids.find(k => k.role !== 'parent');
@@ -143,9 +143,9 @@ export default function Admin({ kids, onKidsChange }) {
             </div>
             <div className="p-4 grid grid-cols-2 gap-3">
               {kids.filter(k => k.role !== 'parent').map(k => (
-                <div key={k.id} className="p-4 rounded-xl border border-white/5" style={{ background: k.color + '22' }}>
+                <div key={k.id} className="p-4 rounded-xl border border-slate-200" style={{ background: k.color + '22' }}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{ background: k.color }}>{k.initials}</div>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white" style={{ background: k.color }}>{k.initials}</div>
                     <div>
                       <div className="font-bold">{k.name}</div>
                       <div className="text-2xl font-extrabold tabular-nums">{k.points_balance}</div>
@@ -219,7 +219,7 @@ function ChoreModal({ chore, kids, onSave, onDelete, onClose }) {
             {DOW.map((d, i) => (
               <button key={i} onClick={() => toggleDay(i)}
                 className={`w-11 h-11 rounded-lg font-bold tap
-                  ${daySet.has(i) ? 'bg-emerald-600' : 'bg-white/5 hover:bg-white/10'}`}>{d}</button>
+                  ${daySet.has(i) ? 'bg-emerald-600' : 'bg-slate-100 hover:bg-slate-200'}`}>{d}</button>
             ))}
           </div>
         </FieldRow>
@@ -233,10 +233,10 @@ function ChoreModal({ chore, kids, onSave, onDelete, onClose }) {
           className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold tap">Save</button>
         {onDelete && (
           <button onClick={onDelete}
-            className="px-6 py-3 bg-rose-700 hover:bg-rose-600 rounded-xl font-semibold tap">Delete</button>
+            className="px-6 py-3 bg-rose-600 hover:bg-rose-600 rounded-xl font-semibold tap">Delete</button>
         )}
         <button onClick={onClose}
-          className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold tap">Cancel</button>
+          className="px-6 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-semibold tap">Cancel</button>
       </div>
     </Modal>
   );
@@ -263,7 +263,7 @@ function KidModal({ kid, onSave, onClose }) {
               <button key={r} type="button"
                 onClick={() => setF({ ...f, role: r })}
                 className={`flex-1 py-2 rounded-lg capitalize tap border
-                  ${f.role === r ? 'bg-white/10 border-white/25 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'}`}>
+                  ${f.role === r ? 'bg-slate-200 border-slate-400 text-white' : 'border-slate-300 text-slate-500 hover:bg-slate-100'}`}>
                 {r}
               </button>
             ))}
@@ -272,7 +272,7 @@ function KidModal({ kid, onSave, onClose }) {
         <FieldRow label="Color (hex)">
           <div className="flex gap-2">
             <input type="color" value={f.color} onChange={e => setF({ ...f, color: e.target.value })}
-              className="h-11 w-16 bg-transparent border border-white/10 rounded-lg" />
+              className="h-11 w-16 bg-transparent border border-slate-300 rounded-lg" />
             <input className="input flex-1" value={f.color} onChange={e => setF({ ...f, color: e.target.value })} />
           </div>
         </FieldRow>
@@ -290,7 +290,7 @@ function KidModal({ kid, onSave, onClose }) {
         <button onClick={() => onSave({ ...kid, ...f })}
           className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold tap">Save</button>
         <button onClick={onClose}
-          className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold tap">Cancel</button>
+          className="px-6 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-semibold tap">Cancel</button>
       </div>
     </Modal>
   );
@@ -320,7 +320,7 @@ function AdjustModal({ kids, adjust, setAdjust, onSubmit, onClose }) {
         <button onClick={onSubmit}
           className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold tap">Apply</button>
         <button onClick={onClose}
-          className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold tap">Cancel</button>
+          className="px-6 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-semibold tap">Cancel</button>
       </div>
     </Modal>
   );
@@ -328,11 +328,11 @@ function AdjustModal({ kids, adjust, setAdjust, onSubmit, onClose }) {
 
 function Modal({ children }) {
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="bg-[#111923] border border-white/10 rounded-2xl p-6 w-[520px] max-h-[90vh] overflow-auto">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+      <div className="bg-white border border-slate-300 rounded-2xl p-6 w-[520px] max-h-[90vh] overflow-auto">
         {children}
       </div>
-      <style>{`.input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;color:#e6edf3;font-size:15px;min-height:44px}`}</style>
+      <style>{`.input{width:100%;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;color:#0f172a;font-size:15px;min-height:44px}`}</style>
     </div>
   );
 }
@@ -372,10 +372,10 @@ function SettingsSection({ settings, onSave }) {
 
   return (
     <>
-      <div className="p-4 border-b border-white/5"><h2 className="text-xl font-bold">Settings</h2></div>
+      <div className="p-4 border-b border-slate-200"><h2 className="text-xl font-bold">Settings</h2></div>
       <div className="p-6 space-y-6 overflow-auto">
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
             Family bedtime (24-hour)
           </label>
           <div className="flex gap-2 items-center">
@@ -387,8 +387,8 @@ function SettingsSection({ settings, onSave }) {
           <p className="text-xs text-slate-500 mt-1">Currently saved: {settings.bedtime || '—'}</p>
         </div>
 
-        <div className="border-t border-white/5 pt-5">
-          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">
+        <div className="border-t border-slate-200 pt-5">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
             Weather location (override default Callahan, FL)
           </label>
           <div className="grid grid-cols-3 gap-2 max-w-[600px]">
@@ -411,7 +411,7 @@ function SettingsSection({ settings, onSave }) {
 function FieldRow({ label, children }) {
   return (
     <div>
-      <label className="block text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">{label}</label>
+      <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">{label}</label>
       {children}
     </div>
   );
