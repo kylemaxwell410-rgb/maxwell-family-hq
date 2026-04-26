@@ -111,7 +111,15 @@ export default function Today({ kids: allKids, onKidsChange }) {
         <DinnerCard meal={meal} />
       </div>
 
-      {/* MAIN: chores grid */}
+      {/* Below the weather row: Coming Up | Next Vacation | Bedtime */}
+      <BottomStrip
+        upcoming={upcoming}
+        bedtime={settings.bedtime}
+        now={now}
+        vacation={nextVacation}
+      />
+
+      {/* Bottom: chores grid (the workhorse — fills remaining space on the wall) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 lg:flex-1 lg:min-h-0">
         {peopleForChores.map(kid => (
           <PersonChoresTile
@@ -123,14 +131,6 @@ export default function Today({ kids: allKids, onKidsChange }) {
           />
         ))}
       </div>
-
-      {/* Bottom: upcoming (auto) | next vacation (1fr) | bedtime (auto) */}
-      <BottomStrip
-        upcoming={upcoming}
-        bedtime={settings.bedtime}
-        now={now}
-        vacation={nextVacation}
-      />
     </div>
   );
 }
@@ -312,6 +312,7 @@ function PersonChoresTile({ kid, chores, onToggle, streak = 0 }) {
       style={{
         boxShadow: `inset 0 4px 0 0 ${kid.color}, 0 1px 3px rgba(15,23,42,0.06)`,
         '--attention-color': kid.color,
+        '--attention-color-soft': `${kid.color}1F`, // ~12% alpha tint
       }}
     >
       {celebrating && <ConfettiOverlay color={kid.color} />}

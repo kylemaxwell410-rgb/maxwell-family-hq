@@ -75,11 +75,12 @@ button, [role="button"], .tap {
   animation: confetti-fall var(--dur, 1.6s) ease-in forwards;
 }
 
-/* Subtle attention pulse for chore tiles that still have work to do.
-   Slow ease, kid-color outline ring fades in and out — not dramatic, just present. */
+/* Whole-tile attention pulse for chore tiles that still have work to do.
+   Subtle: background fades from white to a soft tint of the kid's color and
+   back. 3.6s cycle, ease-in-out so it's not nagging. */
 @keyframes attention-pulse {
-  0%, 100% { outline: 2px solid transparent; outline-offset: 0; }
-  50%      { outline: 3px solid var(--attention-color, #6366f1); outline-offset: 4px; }
+  0%, 100% { background-color: #ffffff; }
+  50%      { background-color: var(--attention-color-soft, #f1f5f9); }
 }
 .attention-pending { animation: attention-pulse 3.6s ease-in-out infinite; }
 
