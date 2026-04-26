@@ -5,6 +5,7 @@ import { fetchWeather, describeCode, getLocation } from '../utils/weather.js';
 import { upcomingMixed } from '../utils/upcoming.js';
 import { fmtTime, fmtDateShort, fmtDayOfWeek } from '../utils/format.js';
 import { factForToday } from '../utils/funFacts.js';
+import MiniGameCard from '../components/MiniGameCard.jsx';
 
 export default function Today({ kids: allKids, onKidsChange }) {
   const peopleForChores = useMemo(() => allKids.filter(k => k.role !== 'pet'), [allKids]);
@@ -518,10 +519,11 @@ function ConfettiOverlay({ color }) {
 // stack vertically.
 function BottomStrip({ upcoming, bedtime, now, vacation }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[max-content_minmax(0,1fr)_max-content] gap-3 flex-shrink-0 lg:h-[150px]">
+    <div className="grid grid-cols-1 lg:grid-cols-[max-content_minmax(0,1fr)_max-content_max-content] gap-3 flex-shrink-0 lg:h-[150px]">
       <UpcomingCard items={upcoming} />
       <NextVacationCard vacation={vacation} />
       <BedtimeCard bedtime={bedtime} now={now} />
+      <MiniGameCard now={now} />
     </div>
   );
 }

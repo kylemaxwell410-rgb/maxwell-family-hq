@@ -48,7 +48,7 @@ const CHORES = [
     notes: '3 cans (hallway + ranger). Install fresh bags after.' },
   { kid: 'Kolt', title: 'Take out boxes (hallway + ranger)',                       frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
   { kid: 'Kolt', title: 'Feed animals — 8am',                                      frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
-  { kid: 'Kolt', title: 'Feed cats',                                               frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Kolt', title: 'Feed and water cats',                                     frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
   { kid: 'Kolt', title: 'Cut grass',                                               frequency: 'weekly_rolling',  days_of_week: '0' },
 
   // MICHAEL-ANN
@@ -64,16 +64,16 @@ const CHORES = [
   { kid: 'Emma', title: 'Feed animals — evening',                                  frequency: 'weekly',          days_of_week: '0,1,3,5' },
   { kid: 'Emma', title: 'Unload dishwasher + counter dishes — 9am',                frequency: 'weekly',          days_of_week: '0,1,3,5' },
   { kid: 'Emma', title: 'Unload dishwasher + counter dishes — 7pm',                frequency: 'weekly',          days_of_week: '0,1,3,5' },
-  { kid: 'Emma', title: 'Feed + water gerbils — 9am',                              frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Emma', title: 'Feed and water gerbils — 9am',                            frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
   { kid: 'Emma', title: 'Dog meds — heartworm/flea/tick (her dog)',                frequency: 'interval',        days_of_week: '0,1,2,3,4,5,6', interval_days: 30, anchor_days_ago: 2 },
 
   // PRESTON
   { kid: 'Preston', title: 'Unload dishwasher + counter dishes — 9am',             frequency: 'weekly',          days_of_week: '2,4,6' },
   { kid: 'Preston', title: 'Unload dishwasher + counter dishes — 7pm',             frequency: 'weekly',          days_of_week: '2,4,6' },
   { kid: 'Preston', title: 'Tidy living room',                                     frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
-  { kid: 'Preston', title: 'Feed dogs — 9am',                                      frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
-  { kid: 'Preston', title: 'Feed dogs — 6pm',                                      frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
-  { kid: 'Preston', title: 'Feed gerbil',                                          frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Preston', title: 'Feed and water dogs — 9am',                            frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Preston', title: 'Feed and water dogs — 6pm',                            frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Preston', title: 'Feed and water gerbils',                               frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
 
   // MOM
   { kid: 'Mom', title: 'Fertilize roses',                                          frequency: 'interval',        days_of_week: '0,1,2,3,4,5,6', interval_days: 42, anchor_days_ago: 42 },
