@@ -38,6 +38,7 @@ export default function Chores({ kids: allKids, onKidsChange }) {
   const [pin, setPin] = useState(() => localStorage.getItem('admin_pin') || null);
   const [pinPrompt, setPinPrompt] = useState(false);
   const pendingAction = useRef(null);
+  const [notesChore, setNotesChore] = useState(null);
 
   function withPin(action) {
     if (pin) return action(pin);
@@ -180,10 +181,13 @@ export default function Chores({ kids: allKids, onKidsChange }) {
                       <LaundryDayTile color={kid.color} />
                     )}
                     {list.map(c => (
-                      <button
+                      <div
                         key={c.id}
+                        role="button"
+                        tabIndex={0}
                         onClick={() => toggle(c)}
-                        className={`w-full flex items-center gap-2.5 p-2.5 rounded-xl transition tap text-left
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(c); } }}
+                        className={`w-full flex items-center gap-2.5 p-2.5 rounded-xl transition tap text-left cursor-pointer
                           ${c.completed
                             ? 'bg-slate-100 text-slate-500 line-through'
                             : 'bg-slate-100 hover:bg-slate-200'}`}
@@ -200,6 +204,15 @@ export default function Chores({ kids: allKids, onKidsChange }) {
                         <div className="flex-1 min-w-0">
                           <div className="text-[15px] font-bold truncate uppercase tracking-wide">{c.title}</div>
                         </div>
+                        {c.notes && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setNotesChore(c); }}
+                            className="w-7 h-7 rounded-full bg-white border border-slate-300 text-slate-600 flex items-center justify-center text-sm font-bold tap flex-shrink-0"
+                            aria-label="View details"
+                          >
+                            i
+                          </button>
+                        )}
                         {c.overdue_days > 0 && !c.completed && (
                           <div className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-600 whitespace-nowrap">
                             Overdue {c.overdue_days}d
@@ -211,7 +224,7 @@ export default function Chores({ kids: allKids, onKidsChange }) {
                             +{c.points}
                           </div>
                         )}
-                      </button>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -233,6 +246,37 @@ export default function Chores({ kids: allKids, onKidsChange }) {
           onCancel={() => { pendingAction.current = null; setPinPrompt(false); }}
         />
       )}
+      {notesChore && (
+        <ChoreNotesModal
+          chore={notesChore}
+          color={kids.find(k => k.id === notesChore.kid_id)?.color || '#94a3b8'}
+          onClose={() => setNotesChore(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ChoreNotesModal({ chore, color, onClose }) {
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-2xl p-5 max-w-sm w-full"
+        style={{ borderTop: `5px solid ${color}` }}
+      >
+        <h3 className="text-lg font-bold uppercase tracking-wide mb-3">{chore.title}</h3>
+        <p className="text-slate-700 text-base whitespace-pre-line">{chore.notes}</p>
+        <button
+          onClick={onClose}
+          className="mt-5 w-full py-3 rounded-xl bg-slate-100 hover:bg-slate-200 font-semibold tap"
+        >
+          Close
+        </button>
+      </div>
     </div>
   );
 }

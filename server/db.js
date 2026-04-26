@@ -157,6 +157,15 @@ export function initSchema() {
     console.log('[db] added interval_days column to chores');
   }
 
+  // Idempotent migration: notes on chores (TEXT, nullable). Free-form details
+  // shown when the kid taps the (i) icon on the chore tile.
+  try {
+    db.prepare('SELECT notes FROM chores LIMIT 1').get();
+  } catch {
+    db.exec('ALTER TABLE chores ADD COLUMN notes TEXT');
+    console.log('[db] added notes column to chores');
+  }
+
   // Family notes
   db.exec(`
     CREATE TABLE IF NOT EXISTS family_notes (

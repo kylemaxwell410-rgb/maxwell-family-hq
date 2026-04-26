@@ -44,9 +44,11 @@ const LAUNDRY = {
 // math starts from the right point. ---
 const CHORES = [
   // KOLT
-  { kid: 'Kolt', title: 'Take out trash bags (3 cans) — install fresh bags after', frequency: 'weekly',          days_of_week: '0' },
+  { kid: 'Kolt', title: 'Take out trash bags', frequency: 'weekly', days_of_week: '0',
+    notes: '3 cans (hallway + ranger). Install fresh bags after.' },
   { kid: 'Kolt', title: 'Take out boxes (hallway + ranger)',                       frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
   { kid: 'Kolt', title: 'Feed animals — 8am',                                      frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Kolt', title: 'Feed cats',                                               frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
   { kid: 'Kolt', title: 'Cut grass',                                               frequency: 'weekly_rolling',  days_of_week: '0' },
 
   // MICHAEL-ANN
@@ -103,8 +105,8 @@ const tx = db.transaction(() => {
 
   console.log('[seed] Inserting chores...');
   const insertChore = db.prepare(
-    `INSERT INTO chores (id, kid_id, title, points, frequency, days_of_week, active, sort_order, interval_days)
-     VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`
+    `INSERT INTO chores (id, kid_id, title, points, frequency, days_of_week, active, sort_order, interval_days, notes)
+     VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`
   );
   const insertCompletion = db.prepare(
     `INSERT INTO chore_completions (id, chore_id, completed_date, completed_at)
@@ -122,7 +124,8 @@ const tx = db.transaction(() => {
       c.frequency,
       c.days_of_week,
       order++,
-      c.interval_days ?? null
+      c.interval_days ?? null,
+      c.notes ?? null
     );
 
     if (c.frequency === 'interval' && c.anchor_days_ago != null) {

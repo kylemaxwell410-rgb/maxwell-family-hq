@@ -49,12 +49,12 @@ router.put('/kids/:id', requirePin, (req, res) => {
 
 // -- CHORES --
 router.post('/chores', requirePin, (req, res) => {
-  const { kid_id, title, points, frequency, days_of_week, active, sort_order, interval_days } = req.body || {};
+  const { kid_id, title, points, frequency, days_of_week, active, sort_order, interval_days, notes } = req.body || {};
   if (!kid_id || !title) return res.status(400).json({ error: 'kid_id and title required' });
   const id = nanoid();
   db.prepare(
-    `INSERT INTO chores (id, kid_id, title, points, frequency, days_of_week, active, sort_order, interval_days)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO chores (id, kid_id, title, points, frequency, days_of_week, active, sort_order, interval_days, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     id,
     kid_id,
@@ -64,7 +64,8 @@ router.post('/chores', requirePin, (req, res) => {
     days_of_week || '0,1,2,3,4,5,6',
     active != null ? (active ? 1 : 0) : 1,
     sort_order ?? 0,
-    interval_days != null ? Number(interval_days) : null
+    interval_days != null ? Number(interval_days) : null,
+    notes || null
   );
   res.json(db.prepare('SELECT * FROM chores WHERE id = ?').get(id));
 });
@@ -72,13 +73,17 @@ router.post('/chores', requirePin, (req, res) => {
 router.put('/chores/:id', requirePin, (req, res) => {
   const row = db.prepare('SELECT * FROM chores WHERE id = ?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Not found' });
-  const { kid_id, title, points, frequency, days_of_week, active, sort_order, interval_days } = req.body || {};
+  const { kid_id, title, points, frequency, days_of_week, active, sort_order, interval_days, notes } = req.body || {};
   const nextInterval =
     interval_days === undefined ? row.interval_days :
     (interval_days === '' || interval_days === null) ? null :
     Number(interval_days);
+  const nextNotes =
+    notes === undefined ? row.notes :
+    (notes === '' || notes === null) ? null :
+    notes;
   db.prepare(
-    `UPDATE chores SET kid_id = ?, title = ?, points = ?, frequency = ?, days_of_week = ?, active = ?, sort_order = ?, interval_days = ?
+    `UPDATE chores SET kid_id = ?, title = ?, points = ?, frequency = ?, days_of_week = ?, active = ?, sort_order = ?, interval_days = ?, notes = ?
      WHERE id = ?`
   ).run(
     kid_id ?? row.kid_id,
@@ -89,6 +94,7 @@ router.put('/chores/:id', requirePin, (req, res) => {
     active != null ? (active ? 1 : 0) : row.active,
     sort_order ?? row.sort_order,
     nextInterval,
+    nextNotes,
     req.params.id
   );
   res.json(db.prepare('SELECT * FROM chores WHERE id = ?').get(req.params.id));

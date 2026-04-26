@@ -223,6 +223,7 @@ function ChoreModal({ chore, kids, onSave, onDelete, onClose }) {
     frequency: chore.frequency || 'daily',
     days_of_week: chore.days_of_week || '0,1,2,3,4,5,6',
     active: chore.active ?? 1, sort_order: chore.sort_order ?? 0,
+    notes: chore.notes ?? '',
   });
   const daySet = new Set(f.days_of_week.split(',').filter(Boolean).map(Number));
   function toggleDay(i) {
@@ -259,6 +260,14 @@ function ChoreModal({ chore, kids, onSave, onDelete, onClose }) {
                   ${daySet.has(i) ? 'bg-emerald-600' : 'bg-slate-100 hover:bg-slate-200'}`}>{d}</button>
             ))}
           </div>
+        </FieldRow>
+        <FieldRow label="Notes (tap-to-view detail)">
+          <textarea
+            className="input min-h-[80px]"
+            placeholder='e.g. "3 cans (hallway + ranger). Install fresh bags after."'
+            value={f.notes}
+            onChange={e => setF({ ...f, notes: e.target.value })}
+          />
         </FieldRow>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={!!f.active} onChange={e => setF({ ...f, active: e.target.checked ? 1 : 0 })} />
