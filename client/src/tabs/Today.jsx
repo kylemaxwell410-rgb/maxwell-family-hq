@@ -104,7 +104,7 @@ export default function Today({ kids: allKids, onKidsChange }) {
       <FunFactStrip fact={fact} />
 
       {/* Top row: Weather (wider), Today, Tomorrow, Dinner (half) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_0.55fr] gap-3 lg:h-[260px] flex-shrink-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_0.55fr] gap-3 lg:h-[300px] flex-shrink-0">
         <WeatherCard weather={weather} err={weatherErr} />
         <EventsCard title="Today's Events"    events={sortedToday}    kids={allKids} />
         <EventsCard title="Tomorrow's Events" events={sortedTomorrow} kids={allKids} />
@@ -195,10 +195,20 @@ function WeatherCard({ weather, err }) {
         </div>
       </div>
 
-      <div className="mt-auto grid grid-cols-7 gap-1 pt-2">
-        {weather.forecast.map((d, i) => (
-          <ForecastDay key={d.date} day={d} index={i} />
-        ))}
+      {/* Forecast: top row 3 big tiles (today/tomorrow/day-after), bottom row 4 smaller */}
+      <div className="mt-auto pt-2 space-y-2">
+        <div className="grid grid-cols-3 gap-2">
+          {weather.forecast.slice(0, 3).map((d, i) => (
+            <ForecastDay key={d.date} day={d} index={i} size="lg" />
+          ))}
+        </div>
+        {weather.forecast.length > 3 && (
+          <div className="grid grid-cols-4 gap-1.5">
+            {weather.forecast.slice(3, 7).map((d) => (
+              <ForecastDay key={d.date} day={d} index={-1} size="sm" />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -217,21 +227,22 @@ function precipSuffix(inches) {
   return ` · ${fmtPrecip(inches)} in`;
 }
 
-function ForecastDay({ day, index }) {
+function ForecastDay({ day, index, size = 'sm' }) {
   const desc = describeCode(day.code);
-  // 7-day strip: short labels so 7 cards fit. Mon/Tue/etc; first two are still Today/Tom.
   const label = index === 0 ? 'TODAY' : index === 1 ? 'TMRW' :
     fmtDayOfWeek(day.date + 'T12:00:00').toUpperCase();
+  const big = size === 'lg';
   return (
-    <div className="bg-slate-50 border border-slate-200 rounded-lg px-1 py-1 text-center">
-      <div className="text-[9px] uppercase tracking-wide text-slate-400 font-semibold">{label}</div>
-      <div className="text-lg leading-tight emoji">{desc.emoji}</div>
-      <div className="text-[11px] tabular-nums text-slate-700 leading-tight">
+    <div className={`bg-slate-50 border border-slate-200 rounded-lg text-center
+      ${big ? 'px-2 py-2' : 'px-1 py-1'}`}>
+      <div className={`uppercase tracking-wide text-slate-500 font-semibold ${big ? 'text-xs' : 'text-[9px]'}`}>{label}</div>
+      <div className={`leading-tight emoji ${big ? 'text-4xl my-1' : 'text-lg'}`}>{desc.emoji}</div>
+      <div className={`tabular-nums text-slate-700 leading-tight ${big ? 'text-base' : 'text-[11px]'}`}>
         <span className="font-bold">{day.highF}°</span>
         <span className="text-slate-400"> / {day.lowF}°</span>
       </div>
       {day.precipPct != null && day.precipPct >= 10 && (
-        <div className="text-[9px] text-slate-400 tabular-nums">{day.precipPct}%</div>
+        <div className={`text-slate-400 tabular-nums ${big ? 'text-xs font-semibold' : 'text-[9px]'}`}>{day.precipPct}%{big ? ' rain' : ''}</div>
       )}
     </div>
   );
@@ -522,10 +533,10 @@ function NextVacationCard({ vacation }) {
       <div className="text-6xl emoji flex-shrink-0">🌴</div>
       <div className="min-w-0 flex-1">
         <div className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Next Vacation</div>
-        <div className="text-2xl lg:text-3xl font-extrabold leading-tight text-slate-900 truncate">
+        <div className="text-lg lg:text-xl font-extrabold leading-tight text-slate-900 truncate">
           {vacation.title}{vacation.location ? <span className="font-normal text-slate-500"> · {vacation.location}</span> : null}
         </div>
-        <div className="text-base lg:text-lg text-slate-600 leading-tight tabular-nums font-semibold">
+        <div className="text-sm lg:text-base text-slate-600 leading-tight tabular-nums font-semibold">
           {inProgress ? '🌞 Right now!' : days === 0 ? 'Starts today' : days === 1 ? 'Tomorrow' : `in ${days} days`}
           {' · '}{range}
         </div>
