@@ -103,8 +103,8 @@ export default function Today({ kids: allKids, onKidsChange }) {
       {notes.length > 0 && <NotesStrip notes={notes} />}
       <FunFactStrip fact={fact} />
 
-      {/* Top row: Weather, Today, Tomorrow, Dinner */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.1fr_1fr_1fr_1fr] gap-3 lg:h-[230px] flex-shrink-0">
+      {/* Top row: Weather (wider), Today, Tomorrow, Dinner (half) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_0.55fr] gap-3 lg:h-[260px] flex-shrink-0">
         <WeatherCard weather={weather} err={weatherErr} />
         <EventsCard title="Today's Events"    events={sortedToday}    kids={allKids} />
         <EventsCard title="Tomorrow's Events" events={sortedTomorrow} kids={allKids} />
@@ -182,14 +182,14 @@ function WeatherCard({ weather, err }) {
         </div>
         <div className="text-3xl emoji">{desc.emoji}</div>
       </div>
-      <div className="mt-1 flex items-center gap-3">
-        <div className="text-5xl font-extrabold tabular-nums leading-none text-slate-900">{weather.current.tempF}°</div>
+      <div className="mt-1 flex items-center gap-4">
+        <div className="text-7xl font-extrabold tabular-nums leading-none text-slate-900">{weather.current.tempF}°</div>
         <div>
-          <div className="text-sm text-slate-700">{desc.label}</div>
-          <div className="text-[11px] text-slate-500 tabular-nums">
+          <div className="text-lg text-slate-700 font-semibold">{desc.label}</div>
+          <div className="text-sm text-slate-500 tabular-nums">
             H {weather.today.highF}° · L {weather.today.lowF}°
           </div>
-          <div className="text-[11px] text-slate-500 tabular-nums">
+          <div className="text-sm text-slate-500 tabular-nums">
             Rain: {weather.today.precipPct ?? 0}%{precipSuffix(weather.today.precipSum)}
           </div>
         </div>
@@ -267,14 +267,23 @@ function EventsCard({ title, events, kids }) {
 /* =================== Dinner =================== */
 
 function DinnerCard({ meal }) {
+  const recipeUrl = meal?.description
+    ? `https://www.google.com/search?q=${encodeURIComponent(meal.description + ' recipe')}`
+    : null;
   return (
-    <div className="surface p-4 flex flex-col overflow-hidden">
+    <div className="surface p-3 flex flex-col overflow-hidden">
       <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Tonight's Dinner</div>
-      <div className="flex-1 flex items-center justify-center text-center">
+      <div className="flex-1 flex flex-col items-center justify-center text-center gap-2">
         {meal?.description ? (
-          <div className="text-2xl font-bold leading-tight text-slate-900">
-            <span className="emoji">🍽️</span> {meal.description}
-          </div>
+          <>
+            <div className="text-base lg:text-lg font-bold leading-tight text-slate-900">
+              <span className="emoji">🍽️</span> {meal.description}
+            </div>
+            <a href={recipeUrl} target="_blank" rel="noreferrer"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold tap shadow-sm">
+              <span className="emoji">🍴</span> Click here for recipe
+            </a>
+          </>
         ) : (
           <div className="text-slate-400 text-xs">Not planned yet — set it on the Meals tab</div>
         )}
@@ -475,7 +484,7 @@ function ConfettiOverlay({ color }) {
 // stack vertically.
 function BottomStrip({ upcoming, bedtime, now, vacation }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[max-content_minmax(0,1fr)_max-content] gap-3 flex-shrink-0 lg:h-[130px]">
+    <div className="grid grid-cols-1 lg:grid-cols-[max-content_minmax(0,1fr)_max-content] gap-3 flex-shrink-0 lg:h-[150px]">
       <UpcomingCard items={upcoming} />
       <NextVacationCard vacation={vacation} />
       <BedtimeCard bedtime={bedtime} now={now} />
@@ -509,14 +518,14 @@ function NextVacationCard({ vacation }) {
     return `${sShort} – ${eShort}`;
   })();
   return (
-    <div className="surface p-3 flex items-center gap-3">
-      <div className="text-5xl emoji flex-shrink-0">🌴</div>
+    <div className="surface p-3 flex items-center gap-4">
+      <div className="text-6xl emoji flex-shrink-0">🌴</div>
       <div className="min-w-0 flex-1">
         <div className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Next Vacation</div>
-        <div className="text-xl font-extrabold leading-tight text-slate-900 truncate">
+        <div className="text-2xl lg:text-3xl font-extrabold leading-tight text-slate-900 truncate">
           {vacation.title}{vacation.location ? <span className="font-normal text-slate-500"> · {vacation.location}</span> : null}
         </div>
-        <div className="text-sm text-slate-600 leading-tight tabular-nums font-semibold">
+        <div className="text-base lg:text-lg text-slate-600 leading-tight tabular-nums font-semibold">
           {inProgress ? '🌞 Right now!' : days === 0 ? 'Starts today' : days === 1 ? 'Tomorrow' : `in ${days} days`}
           {' · '}{range}
         </div>
@@ -528,25 +537,25 @@ function NextVacationCard({ vacation }) {
 function UpcomingCard({ items }) {
   return (
     <div className="surface p-3 flex flex-col overflow-hidden">
-      <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1.5">Coming Up</div>
+      <div className="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1.5">Coming Up</div>
       {items.length === 0 ? (
-        <div className="text-slate-400 text-xs flex-1 flex items-center">Nothing on the horizon.</div>
+        <div className="text-slate-400 text-sm flex-1 flex items-center">Nothing on the horizon.</div>
       ) : (
         <div className="flex gap-2 flex-1 items-center overflow-x-auto">
           {items.map(item => (
             <div key={item.key}
-              className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 flex-shrink-0">
+              className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 flex-shrink-0">
               {item.type === 'birthday' ? (
-                <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm text-white flex-shrink-0"
+                <div className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-base text-white flex-shrink-0"
                   style={{ background: item.color }}>{item.person.initials}</div>
               ) : (
-                <div className="text-2xl emoji flex-shrink-0">{item.emoji}</div>
+                <div className="text-3xl emoji flex-shrink-0">{item.emoji}</div>
               )}
               <div>
-                <div className="text-sm font-bold leading-tight text-slate-900 truncate max-w-[160px]">
+                <div className="text-base font-extrabold leading-tight text-slate-900 truncate max-w-[180px]">
                   {item.type === 'birthday' ? `${item.label}'s Birthday` : item.label}
                 </div>
-                <div className="text-[10px] text-slate-500 leading-tight tabular-nums">
+                <div className="text-xs text-slate-500 leading-tight tabular-nums font-semibold">
                   {countdownLabel(item.daysUntil)} · {fmtDateShort(item.date)}
                   {item.type === 'birthday' && item.age != null ? ` · turns ${item.age}` : ''}
                 </div>
@@ -562,14 +571,14 @@ function UpcomingCard({ items }) {
 function BedtimeCard({ bedtime, now }) {
   const info = bedtime ? bedtimeCountdown(bedtime, now) : null;
   return (
-    <div className="surface p-3 flex items-center gap-3 min-w-[260px]">
-      <div className="text-5xl emoji">🌙</div>
+    <div className="surface p-3 flex items-center gap-3 min-w-[280px]">
+      <div className="text-6xl emoji">🌙</div>
       <div className="min-w-0">
         <div className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Bedtime</div>
         {info ? (
           <>
-            <div className="text-xl font-extrabold leading-tight text-slate-900 tabular-nums">{info.label}</div>
-            <div className="text-sm text-slate-600 tabular-nums font-semibold">at {info.timeLabel}</div>
+            <div className="text-2xl lg:text-3xl font-extrabold leading-tight text-slate-900 tabular-nums">{info.label}</div>
+            <div className="text-base lg:text-lg text-slate-600 tabular-nums font-semibold">at {info.timeLabel}</div>
           </>
         ) : (
           <div className="text-sm text-slate-400">Set bedtime in Admin</div>
