@@ -8,7 +8,12 @@
 // Idempotent — safe to re-run. Leaves point_transactions and points_balance
 // alone (points are shelved, not deleted).
 
-import { db, nanoid } from '../db.js';
+import { db, nanoid, initSchema } from '../db.js';
+
+// Ensure migrations have run (laundry_day on kids, interval_days on chores).
+// The server's index.js normally does this on boot; running standalone, we
+// have to do it ourselves before touching those columns.
+initSchema();
 
 function todayStr(d = new Date()) {
   const y = d.getFullYear();
