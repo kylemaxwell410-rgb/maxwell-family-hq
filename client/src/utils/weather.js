@@ -22,17 +22,14 @@ export function setLocation(loc) {
 
 export async function fetchWeather() {
   const loc = getLocation();
-  const url = new URL('https://api.open-meteo.com/v1/forecast');
+  // Hit our same-origin proxy instead of Open-Meteo directly so the kiosk
+  // never has to deal with cross-origin / TLS / SW quirks.
+  const url = new URL('/api/weather', window.location.origin);
   url.searchParams.set('latitude', loc.latitude);
   url.searchParams.set('longitude', loc.longitude);
-  url.searchParams.set('current', 'temperature_2m,weather_code,is_day,wind_speed_10m');
-  url.searchParams.set('daily', 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,sunrise,sunset');
-  url.searchParams.set('temperature_unit', 'fahrenheit');
-  url.searchParams.set('wind_speed_unit', 'mph');
-  url.searchParams.set('precipitation_unit', 'inch');
   url.searchParams.set('timezone', loc.timezone);
   url.searchParams.set('forecast_days', '7');
-  const res = await fetch(url);
+  const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error('Weather fetch failed');
   const data = await res.json();
   const days = data.daily.time.map((iso, i) => ({
