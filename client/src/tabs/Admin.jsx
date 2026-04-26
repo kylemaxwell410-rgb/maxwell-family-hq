@@ -7,11 +7,12 @@ const DOW = ['S','M','T','W','T','F','S'];
 export default function Admin({ kids, onKidsChange }) {
   const [pin, setPin] = useState(null);
   const [chores, setChores] = useState([]);
-  const [section, setSection] = useState('chores'); // chores | kids | points | settings | notes
+  const [section, setSection] = useState('chores'); // chores | kids | notes | vacations | points | settings
   const [editing, setEditing] = useState(null);
   const [adjust, setAdjust] = useState(null);
   const [settings, setSettings] = useState({});
   const [notes, setNotes] = useState([]);
+  const [vacations, setVacations] = useState([]);
 
   async function loadChores() {
     if (!pin) return;
@@ -23,8 +24,11 @@ export default function Admin({ kids, onKidsChange }) {
   async function loadNotes() {
     setNotes(await api.notes());
   }
+  async function loadVacations() {
+    setVacations(await api.vacations());
+  }
   useEffect(() => { loadChores(); }, [pin]);
-  useEffect(() => { loadSettings(); loadNotes(); }, []);
+  useEffect(() => { loadSettings(); loadNotes(); loadVacations(); }, []);
 
   if (!pin) return <PinModal onVerified={setPin} onCancel={() => setPin(null)} />;
 
@@ -67,11 +71,24 @@ export default function Admin({ kids, onKidsChange }) {
     await api.deleteNote(pin, id);
     await loadNotes();
   }
+  async function addVacation(body) {
+    await api.addVacation(pin, body);
+    await loadVacations();
+  }
+  async function updateVacation(id, body) {
+    await api.updateVacation(pin, id, body);
+    await loadVacations();
+  }
+  async function removeVacation(id) {
+    if (!confirm('Delete this vacation?')) return;
+    await api.deleteVacation(pin, id);
+    await loadVacations();
+  }
 
   return (
     <div className="h-full flex gap-4 p-6 overflow-hidden">
       <nav className="w-52 flex flex-col gap-1">
-        {['chores','kids','notes','points','settings'].map(s => (
+        {['chores','kids','notes','vacations','points','settings'].map(s => (
           <button key={s} onClick={() => setSection(s)}
             className={`px-4 py-3 rounded-xl font-semibold capitalize text-left tap
               ${section === s ? 'bg-slate-200' : 'hover:bg-slate-100 text-slate-500'}`}>
@@ -143,6 +160,10 @@ export default function Admin({ kids, onKidsChange }) {
 
         {section === 'notes' && (
           <NotesSection notes={notes} onAdd={addNote} onRemove={removeNote} />
+        )}
+
+        {section === 'vacations' && (
+          <VacationsSection vacations={vacations} onAdd={addVacation} onUpdate={updateVacation} onRemove={removeVacation} />
         )}
 
         {section === 'points' && (
@@ -486,6 +507,82 @@ function NotesSection({ notes, onAdd, onRemove }) {
                     </div>
                   </div>
                   <button onClick={() => onRemove(n.id)}
+                    className="px-3 py-1.5 text-rose-600 hover:bg-rose-50 rounded-lg font-semibold text-sm tap">Remove</button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function VacationsSection({ vacations, onAdd, onUpdate, onRemove }) {
+  const empty = { title: '', location: '', start_date: '', end_date: '', notes: '' };
+  const [draft, setDraft] = useState(empty);
+  const [editingId, setEditingId] = useState(null);
+
+  async function submit() {
+    if (!draft.title || !draft.start_date || !draft.end_date) return;
+    if (editingId) await onUpdate(editingId, draft);
+    else           await onAdd(draft);
+    setDraft(empty); setEditingId(null);
+  }
+  function startEdit(v) {
+    setDraft({ title: v.title, location: v.location || '', start_date: v.start_date, end_date: v.end_date, notes: v.notes || '' });
+    setEditingId(v.id);
+  }
+
+  return (
+    <>
+      <div className="p-4 border-b border-slate-200"><h2 className="text-xl font-bold">Vacations</h2></div>
+      <div className="p-6 space-y-5 overflow-auto">
+        <div className="space-y-2">
+          <div className="text-xs uppercase tracking-wide text-slate-500 font-semibold">
+            {editingId ? 'Edit vacation' : 'Add a vacation'}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <input className="input" placeholder="Title (e.g. Disney World trip)"
+              value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} />
+            <input className="input" placeholder="Location (e.g. Orlando, FL)"
+              value={draft.location} onChange={e => setDraft({ ...draft, location: e.target.value })} />
+            <input type="date" className="input" value={draft.start_date}
+              onChange={e => setDraft({ ...draft, start_date: e.target.value })} />
+            <input type="date" className="input" value={draft.end_date}
+              onChange={e => setDraft({ ...draft, end_date: e.target.value })} />
+          </div>
+          <textarea className="input min-h-[60px]" placeholder="Notes (optional)"
+            value={draft.notes} onChange={e => setDraft({ ...draft, notes: e.target.value })} />
+          <div className="flex gap-2">
+            <button onClick={submit} disabled={!draft.title || !draft.start_date || !draft.end_date}
+              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg font-semibold tap">
+              {editingId ? 'Save' : 'Add'}
+            </button>
+            {editingId && (
+              <button onClick={() => { setDraft(empty); setEditingId(null); }}
+                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold tap">Cancel</button>
+            )}
+          </div>
+        </div>
+
+        <div className="border-t border-slate-200 pt-4">
+          <div className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-2">All trips ({vacations.length})</div>
+          {vacations.length === 0 ? (
+            <div className="text-sm text-slate-400">No trips yet.</div>
+          ) : (
+            <ul className="space-y-2">
+              {vacations.map(v => (
+                <li key={v.id} className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3">
+                  <div className="text-2xl emoji">🌴</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-slate-900">{v.title}{v.location ? <span className="font-normal text-slate-500"> · {v.location}</span> : null}</div>
+                    <div className="text-xs text-slate-500">{v.start_date} → {v.end_date}</div>
+                    {v.notes && <div className="text-xs text-slate-600 mt-1 whitespace-pre-wrap">{v.notes}</div>}
+                  </div>
+                  <button onClick={() => startEdit(v)}
+                    className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg font-semibold text-sm tap">Edit</button>
+                  <button onClick={() => onRemove(v.id)}
                     className="px-3 py-1.5 text-rose-600 hover:bg-rose-50 rounded-lg font-semibold text-sm tap">Remove</button>
                 </li>
               ))}

@@ -150,6 +150,20 @@ export function initSchema() {
     );
   `);
 
+  // Vacations: trips with a location and date range.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS vacations (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      location TEXT,
+      start_date TEXT NOT NULL,
+      end_date TEXT NOT NULL,
+      notes TEXT,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_vacations_start ON vacations(start_date);
+  `);
+
   // Bot Q&A audit log: every kid question + Claude's answer for parent visibility.
   db.exec(`
     CREATE TABLE IF NOT EXISTS bot_messages (

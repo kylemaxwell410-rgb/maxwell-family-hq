@@ -18,6 +18,7 @@ export default function Today({ kids: allKids, onKidsChange }) {
   const [settings, setSettings]           = useState({});
   const [notes, setNotes]                 = useState([]);
   const [streaks, setStreaks]             = useState({});
+  const [vacations, setVacations]         = useState([]);
   const [now, setNow]                     = useState(new Date());
   const dStr = todayStr();
 
@@ -26,7 +27,7 @@ export default function Today({ kids: allKids, onKidsChange }) {
     const todayEnd = endOfDay(new Date());
     const tomorrow    = startOfDay(addDays(new Date(), 1));
     const tomorrowEnd = endOfDay(addDays(new Date(), 1));
-    const [c, eToday, eTomorrow, m, s, n, st] = await Promise.all([
+    const [c, eToday, eTomorrow, m, s, n, st, v] = await Promise.all([
       api.chores(dStr),
       api.events(today.toISOString(), todayEnd.toISOString()),
       api.events(tomorrow.toISOString(), tomorrowEnd.toISOString()),
@@ -34,6 +35,7 @@ export default function Today({ kids: allKids, onKidsChange }) {
       api.settings(),
       api.notes(),
       api.streaks(),
+      api.vacations(),
     ]);
     setChores(c);
     setTodayEvents(eToday);
@@ -42,6 +44,7 @@ export default function Today({ kids: allKids, onKidsChange }) {
     setSettings(s);
     setNotes(n);
     setStreaks(st);
+    setVacations(v);
   }
 
   useEffect(() => {
@@ -88,6 +91,12 @@ export default function Today({ kids: allKids, onKidsChange }) {
   const sortedTomorrow = useMemo(() => [...tomorrowEvents].sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime)), [tomorrowEvents]);
   const upcoming       = useMemo(() => upcomingMixed(allKids, 5), [allKids]);
   const fact           = useMemo(() => factForToday(now), [now]);
+  const nextVacation   = useMemo(() => {
+    const today = startOfDay(new Date());
+    return [...vacations]
+      .filter(v => new Date(v.end_date + 'T23:59:59') >= today)
+      .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))[0] || null;
+  }, [vacations]);
 
   return (
     <div className="flex flex-col gap-3 p-3 lg:h-full lg:overflow-hidden">
@@ -115,8 +124,13 @@ export default function Today({ kids: allKids, onKidsChange }) {
         ))}
       </div>
 
-      {/* Bottom: combined upcoming countdown (left) + bedtime (right) */}
-      <BottomStrip upcoming={upcoming} bedtime={settings.bedtime} now={now} />
+      {/* Bottom: upcoming (auto) | next vacation (1fr) | bedtime (auto) */}
+      <BottomStrip
+        upcoming={upcoming}
+        bedtime={settings.bedtime}
+        now={now}
+        vacation={nextVacation}
+      />
     </div>
   );
 }
@@ -401,13 +415,59 @@ function ConfettiOverlay({ color }) {
   );
 }
 
-/* =================== Bottom strip: upcoming (left) + bedtime (right) =================== */
+/* =================== Bottom strip =================== */
 
-function BottomStrip({ upcoming, bedtime, now }) {
+// Bottom row: Coming Up sized to its chips (auto), Next Vacation fills the
+// remaining space (1fr), Bedtime pinned right (auto). On phones the three
+// stack vertically.
+function BottomStrip({ upcoming, bedtime, now, vacation }) {
   return (
-    <div className="grid grid-cols-[1fr_auto] gap-3 flex-shrink-0 h-[110px]">
+    <div className="grid grid-cols-1 lg:grid-cols-[max-content_minmax(0,1fr)_max-content] gap-3 flex-shrink-0 lg:h-[110px]">
       <UpcomingCard items={upcoming} />
+      <NextVacationCard vacation={vacation} />
       <BedtimeCard bedtime={bedtime} now={now} />
+    </div>
+  );
+}
+
+function NextVacationCard({ vacation }) {
+  if (!vacation) {
+    return (
+      <div className="surface p-3 flex items-center gap-3">
+        <div className="text-3xl emoji">🌴</div>
+        <div className="min-w-0">
+          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Next Vacation</div>
+          <div className="text-sm text-slate-400">No trips on the books — add one in Admin → Vacations</div>
+        </div>
+      </div>
+    );
+  }
+  const today = startOfDay(new Date());
+  const start = new Date(vacation.start_date + 'T00:00:00');
+  const end   = new Date(vacation.end_date   + 'T00:00:00');
+  const inProgress = today >= start && today <= end;
+  const days = Math.round((start - today) / 86_400_000);
+  const range = (() => {
+    const sShort = fmtDateShort(start);
+    const eShort = fmtDateShort(end);
+    if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
+      return `${sShort.split(' ')[0]} ${start.getDate()}–${end.getDate()}`;
+    }
+    return `${sShort} – ${eShort}`;
+  })();
+  return (
+    <div className="surface p-3 flex items-center gap-3">
+      <div className="text-3xl emoji flex-shrink-0">🌴</div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Next Vacation</div>
+        <div className="text-base font-bold leading-tight text-slate-900 truncate">
+          {vacation.title}{vacation.location ? <span className="font-normal text-slate-500"> · {vacation.location}</span> : null}
+        </div>
+        <div className="text-[10px] text-slate-500 leading-tight tabular-nums">
+          {inProgress ? '🌞 Right now!' : days === 0 ? 'Starts today' : days === 1 ? 'Tomorrow' : `in ${days} days`}
+          {' · '}{range}
+        </div>
+      </div>
     </div>
   );
 }

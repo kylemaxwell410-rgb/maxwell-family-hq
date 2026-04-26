@@ -92,6 +92,18 @@ export const api = {
   // streaks
   streaks: () => req('/streaks'),
 
+  // vacations
+  vacations: () => req('/vacations'),
+  addVacation: (pin, body) => req('/vacations', {
+    method: 'POST', headers: { 'x-admin-pin': pin }, body: JSON.stringify(body),
+  }),
+  updateVacation: (pin, id, body) => req(`/vacations/${id}`, {
+    method: 'PUT', headers: { 'x-admin-pin': pin }, body: JSON.stringify(body),
+  }),
+  deleteVacation: (pin, id) => req(`/vacations/${id}`, {
+    method: 'DELETE', headers: { 'x-admin-pin': pin },
+  }),
+
   // bot
   askBot: (question, kid_name) => req('/bot/ask', {
     method: 'POST', body: JSON.stringify({ question, kid_name }),
