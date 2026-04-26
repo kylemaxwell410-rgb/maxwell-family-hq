@@ -190,7 +190,7 @@ export function initSchema() {
 }
 
 const SEED_KIDS = [
-  { id: 'kolt',        name: 'Kolt',        initials: 'K',  color: '#C43E3E', sort_order: 1, role: 'kid',    birthday: '02-07' },
+  { id: 'kolt',        name: 'Kolt',        initials: 'K',  color: '#EF4444', sort_order: 1, role: 'kid',    birthday: '02-07' },
   { id: 'michaelann',  name: 'Michael-ann', initials: 'MA', color: '#EC4899', sort_order: 2, role: 'kid',    birthday: '01-29' },
   { id: 'emma',        name: 'Emma',        initials: 'E',  color: '#22C55E', sort_order: 3, role: 'kid',    birthday: '02-14' },
   { id: 'preston',     name: 'Preston',     initials: 'P',  color: '#185FA5', sort_order: 4, role: 'kid',    birthday: '11-25' },
@@ -284,11 +284,11 @@ export function seedIfEmpty() {
 // Respects admin edits: only updates if the color is still the *previous* seeded color
 // (tracked via this table of historical defaults), so a user override via Admin sticks.
 const PREVIOUS_COLORS = {
-  kolt:       ['#185FA5'],            // was blue, now red
-  preston:    ['#0F6E56'],            // was teal, now blue
-  mom:        ['#0F6E56'],            // was green, now teal
-  michaelann: ['#993556'],            // was magenta, now pink
-  emma:       ['#534AB7'],            // was purple, now green
+  kolt:       ['#185FA5', '#C43E3E'], // blue → muted red → bright red
+  preston:    ['#0F6E56'],            // teal → blue
+  mom:        ['#0F6E56'],            // green → teal
+  michaelann: ['#993556'],            // magenta → pink
+  emma:       ['#534AB7'],            // purple → green
 };
 
 export function applySeedColorUpdates() {

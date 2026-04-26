@@ -137,7 +137,7 @@ export default function Chores({ kids: allKids, onKidsChange }) {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-[15px] font-medium truncate">{c.title}</div>
+                          <div className="text-[15px] font-bold truncate uppercase tracking-wide">{c.title}</div>
                         </div>
                         {!isParent && (
                           <div className="text-xs font-semibold px-2 py-0.5 rounded-md"

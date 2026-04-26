@@ -373,7 +373,7 @@ function PersonChoresTile({ kid, chores, onToggle, streak = 0 }) {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate">{c.title}</div>
+              <div className="text-sm font-bold truncate uppercase tracking-wide">{c.title}</div>
             </div>
             {!isParent && (
               <div className="text-[11px] font-semibold px-1.5 py-0.5 rounded"
@@ -424,7 +424,7 @@ function AllDoneBody({ kid, earned, streak, isParent, chores, onToggle }) {
                   <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              <span className="flex-1 truncate text-slate-600 line-through">{c.title}</span>
+              <span className="flex-1 truncate text-slate-600 line-through uppercase tracking-wide">{c.title}</span>
               {!isParent && <span className="text-slate-400">+{c.points}</span>}
             </button>
           ))}
