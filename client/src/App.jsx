@@ -3,6 +3,7 @@ import Header from './components/Header.jsx';
 import TabNav from './components/TabNav.jsx';
 import { BoredModal, AskModal } from './components/QuickActions.jsx';
 import VirtualKeyboard from './components/VirtualKeyboard.jsx';
+import StickyNote from './components/StickyNote.jsx';
 import Today from './tabs/Today.jsx';
 import Chores from './tabs/Chores.jsx';
 import Calendar from './tabs/Calendar.jsx';
@@ -16,7 +17,8 @@ const TABS = [
   { id: 'chores',   label: 'Chores' },
   { id: 'calendar', label: 'Calendar' },
   { id: 'meals',    label: 'Meals' },
-  { id: 'points',   label: 'Points' },
+  // Points tab is hidden for now — coming back later when the reward
+  // system is fleshed out. Underlying tables and routes are untouched.
   { id: 'admin',    label: 'Admin' },
 ];
 
@@ -42,8 +44,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen w-screen flex flex-col bg-slate-100 text-slate-900 lg:h-screen lg:overflow-hidden">
-      <Header onBored={() => setBoredOpen(true)} onAsk={() => setAskOpen(true)} />
-      <TabNav tabs={TABS} current={tab} onChange={setTab} />
+      <div className="bg-white border-b border-slate-200 flex items-stretch">
+        <div className="flex-1 min-w-0 flex flex-col">
+          <Header onBored={() => setBoredOpen(true)} onAsk={() => setAskOpen(true)} bare />
+          <TabNav tabs={TABS} current={tab} onChange={setTab} bare />
+        </div>
+        <StickyNote />
+      </div>
       <main className="flex-1 lg:overflow-hidden">
         {tab === 'today'    && <Today    kids={kids} onKidsChange={loadKids} />}
         {tab === 'chores'   && <Chores   kids={kids} onKidsChange={loadKids} />}

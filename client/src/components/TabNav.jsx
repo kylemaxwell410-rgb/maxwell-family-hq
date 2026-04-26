@@ -1,6 +1,7 @@
-export default function TabNav({ tabs, current, onChange }) {
+export default function TabNav({ tabs, current, onChange, bare = false }) {
   return (
-    <nav className="flex gap-1 px-3 py-2 lg:px-6 lg:py-3 bg-white border-b border-slate-200 overflow-x-auto whitespace-nowrap">
+    <nav className={`flex gap-1 px-3 py-2 lg:px-6 lg:py-3 overflow-x-auto whitespace-nowrap
+      ${bare ? 'border-t border-slate-100' : 'bg-white border-b border-slate-200'}`}>
       {tabs.map(t => {
         const active = t.id === current;
         return (

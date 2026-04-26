@@ -359,7 +359,7 @@ function PersonChoresTile({ kid, chores, onToggle, streak = 0 }) {
             style={{ background: kid.color }}>{kid.initials}</div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <div className="text-xl lg:text-2xl font-extrabold leading-tight truncate text-slate-900 uppercase tracking-wide"
+              <div className="text-xl lg:text-2xl font-extrabold leading-tight truncate uppercase tracking-wide"
                 style={{ color: kid.color }}>
                 {kid.name}
               </div>
@@ -373,16 +373,10 @@ function PersonChoresTile({ kid, chores, onToggle, streak = 0 }) {
             <div className="text-xs text-slate-500 leading-tight mt-0.5">
               {total === 0 ? 'No chores today' :
                 allDone ? <><span className="emoji">🎉</span> All done</> :
-                isParent ? `${done}/${total} done` : `${done}/${total} · ${earned}/${possible} pts`}
+                `${done}/${total} done`}
             </div>
           </div>
         </div>
-        {!isParent && (
-          <div className="text-right flex-shrink-0">
-            <div className="text-2xl font-bold tabular-nums leading-tight text-slate-900">{kid.points_balance}</div>
-            <div className="text-[9px] text-slate-400 uppercase tracking-wide leading-none">pts</div>
-          </div>
-        )}
       </div>
 
       <div className="flex-1 p-2 overflow-auto space-y-1.5">
@@ -411,12 +405,6 @@ function PersonChoresTile({ kid, chores, onToggle, streak = 0 }) {
             <div className="flex-1 min-w-0">
               <div className="text-sm font-bold truncate uppercase tracking-wide">{c.title}</div>
             </div>
-            {!isParent && (
-              <div className="text-[11px] font-semibold px-1.5 py-0.5 rounded"
-                style={{ background: kid.color + '22', color: c.completed ? '#94a3b8' : kid.color }}>
-                +{c.points}
-              </div>
-            )}
           </button>
         ))}
       </div>
@@ -438,7 +426,7 @@ function AllDoneBody({ kid, earned, streak, isParent, chores, onToggle }) {
       <div className="text-7xl emoji mb-1 leading-none" style={{ filter: `drop-shadow(0 2px 4px ${kid.color}55)` }}>🎉</div>
       <div className="text-3xl lg:text-4xl font-extrabold leading-tight uppercase tracking-wide" style={{ color: kid.color }}>All Done!</div>
       <div className="mt-2 text-lg lg:text-xl text-slate-800 font-bold">
-        {isParent ? `${chores.length}/${chores.length} chores` : <>+{earned} pts today</>}
+        {chores.length}/{chores.length} chores
       </div>
       {streak >= 2 && (
         <div className="mt-3 inline-flex items-center gap-1.5 text-base lg:text-lg font-bold text-orange-700 bg-orange-100 rounded-full px-4 py-1.5">
@@ -461,7 +449,6 @@ function AllDoneBody({ kid, earned, streak, isParent, chores, onToggle }) {
                 </svg>
               </div>
               <span className="flex-1 truncate text-slate-600 line-through uppercase tracking-wide">{c.title}</span>
-              {!isParent && <span className="text-slate-400">+{c.points}</span>}
             </button>
           ))}
         </div>
