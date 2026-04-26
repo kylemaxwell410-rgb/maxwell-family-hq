@@ -104,7 +104,7 @@ export default function Today({ kids: allKids, onKidsChange }) {
       <FunFactStrip fact={fact} />
 
       {/* Top row: Weather (wider), Today, Tomorrow, Dinner (half) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_0.55fr] gap-3 lg:h-[300px] flex-shrink-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_0.55fr] gap-3 lg:h-[360px] flex-shrink-0">
         <WeatherCard weather={weather} err={weatherErr} />
         <EventsCard title="Today's Events"    events={sortedToday}    kids={allKids} />
         <EventsCard title="Tomorrow's Events" events={sortedTomorrow} kids={allKids} />
@@ -232,15 +232,15 @@ function ForecastDay({ day, index, size = 'sm' }) {
   const big = size === 'lg';
   return (
     <div className={`bg-slate-50 border border-slate-200 rounded-lg text-center
-      ${big ? 'px-2 py-2' : 'px-1 py-1.5'}`}>
-      <div className={`uppercase tracking-wide text-slate-500 font-semibold ${big ? 'text-sm' : 'text-[10px]'}`}>{label}</div>
-      <div className={`leading-tight emoji ${big ? 'text-5xl my-1' : 'text-xl'}`}>{desc.emoji}</div>
-      <div className={`tabular-nums text-slate-700 leading-tight ${big ? 'text-lg' : 'text-xs'}`}>
+      ${big ? 'px-2 py-3' : 'px-2 py-2'}`}>
+      <div className={`uppercase tracking-wide text-slate-500 font-semibold ${big ? 'text-base' : 'text-xs'}`}>{label}</div>
+      <div className={`leading-tight emoji ${big ? 'text-6xl my-1.5' : 'text-3xl my-0.5'}`}>{desc.emoji}</div>
+      <div className={`tabular-nums text-slate-700 leading-tight ${big ? 'text-xl' : 'text-base'}`}>
         <span className="font-bold">{day.highF}°</span>
         <span className="text-slate-400"> / {day.lowF}°</span>
       </div>
       {day.precipPct != null && day.precipPct >= 10 && (
-        <div className={`text-slate-500 tabular-nums font-semibold ${big ? 'text-sm' : 'text-[10px]'}`}>{day.precipPct}%{big ? ' rain' : ''}</div>
+        <div className={`text-slate-500 tabular-nums font-semibold ${big ? 'text-base' : 'text-xs'}`}>{day.precipPct}%{big ? ' rain' : ''}</div>
       )}
     </div>
   );
@@ -418,19 +418,19 @@ function AllDoneBody({ kid, earned, streak, isParent, chores, onToggle }) {
         background: `linear-gradient(180deg, ${kid.color}1F 0%, ${kid.color}08 100%)`,
         borderRadius: 12,
       }}>
-      <div className="text-6xl emoji mb-1 leading-none" style={{ filter: `drop-shadow(0 2px 4px ${kid.color}55)` }}>🎉</div>
-      <div className="text-2xl font-extrabold leading-tight" style={{ color: kid.color }}>All Done!</div>
-      <div className="mt-1 text-sm text-slate-700">
+      <div className="text-7xl emoji mb-1 leading-none" style={{ filter: `drop-shadow(0 2px 4px ${kid.color}55)` }}>🎉</div>
+      <div className="text-3xl lg:text-4xl font-extrabold leading-tight uppercase tracking-wide" style={{ color: kid.color }}>All Done!</div>
+      <div className="mt-2 text-lg lg:text-xl text-slate-800 font-bold">
         {isParent ? `${chores.length}/${chores.length} chores` : <>+{earned} pts today</>}
       </div>
       {streak >= 2 && (
-        <div className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-orange-700 bg-orange-100 rounded-full px-3 py-1">
+        <div className="mt-3 inline-flex items-center gap-1.5 text-base lg:text-lg font-bold text-orange-700 bg-orange-100 rounded-full px-4 py-1.5">
           <span className="emoji">🔥</span>{streak}-day streak
         </div>
       )}
       <button
         onClick={() => setShowList(s => !s)}
-        className="mt-3 text-[11px] text-slate-500 underline tap min-h-0 px-2 py-1">
+        className="mt-4 text-sm lg:text-base text-slate-600 font-semibold underline tap min-h-0 px-3 py-1">
         {showList ? 'hide' : 'undo a chore'}
       </button>
       {showList && (
