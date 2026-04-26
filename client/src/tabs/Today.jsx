@@ -106,7 +106,12 @@ export default function Today({ kids: allKids, onKidsChange }) {
       {/* Top row: Weather (wider), Today, Tomorrow, Dinner (half) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_0.55fr] gap-3 lg:h-[360px] flex-shrink-0">
         <WeatherCard weather={weather} err={weatherErr} />
-        <EventsCard title="Today's Events"    events={sortedToday}    kids={allKids} />
+        <EventsCard
+          title="Today's Events"
+          events={sortedToday}
+          kids={allKids}
+          pinnedTop={now.getDay() === 0 ? <LaundryCatchUpTile /> : null}
+        />
         <EventsCard title="Tomorrow's Events" events={sortedTomorrow} kids={allKids} />
         <DinnerCard meal={meal} />
       </div>
@@ -242,6 +247,9 @@ function ForecastDay({ day, index, size = 'sm' }) {
         {day.precipPct != null && day.precipPct >= 10 && (
           <div className="text-base text-slate-500 tabular-nums font-semibold">{day.precipPct}% rain</div>
         )}
+        {day.precipSum >= 0.01 && (
+          <div className="text-sm text-slate-500 tabular-nums font-semibold">{fmtPrecip(day.precipSum)} in</div>
+        )}
       </div>
     );
   }
@@ -258,6 +266,9 @@ function ForecastDay({ day, index, size = 'sm' }) {
         {day.precipPct != null && day.precipPct >= 10 && (
           <div className="text-xs text-slate-500 tabular-nums font-semibold">{day.precipPct}%</div>
         )}
+        {day.precipSum >= 0.01 && (
+          <div className="text-xs text-slate-500 tabular-nums font-semibold">{fmtPrecip(day.precipSum)} in</div>
+        )}
       </div>
     </div>
   );
@@ -265,14 +276,15 @@ function ForecastDay({ day, index, size = 'sm' }) {
 
 /* =================== Events =================== */
 
-function EventsCard({ title, events, kids }) {
+function EventsCard({ title, events, kids, pinnedTop }) {
   const colorFor = (kid_id) => kids.find(k => k.id === kid_id)?.color || '#94a3b8';
   return (
     <Card title={title} bigTitle>
+      {pinnedTop}
       {events.length === 0 ? (
-        <div className="text-slate-400 text-base py-6 text-center">Nothing scheduled</div>
+        !pinnedTop && <div className="text-slate-400 text-base py-6 text-center">Nothing scheduled</div>
       ) : (
-        <div className="space-y-2 overflow-auto pr-1">
+        <div className={`space-y-2 overflow-auto pr-1 ${pinnedTop ? 'mt-2' : ''}`}>
           {events.map(e => (
             <div key={e.id} className="flex gap-2 items-start bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
               <div className="w-1.5 self-stretch rounded-full" style={{ background: colorFor(e.kid_id) }} />
@@ -287,6 +299,17 @@ function EventsCard({ title, events, kids }) {
         </div>
       )}
     </Card>
+  );
+}
+
+function LaundryCatchUpTile() {
+  return (
+    <div className="flex gap-2 items-center bg-slate-100 border border-slate-300 rounded-lg px-3 py-2">
+      <div className="text-2xl">🧺</div>
+      <div className="text-lg lg:text-xl font-bold text-slate-900 leading-tight">
+        Catch Up Laundry Day
+      </div>
+    </div>
   );
 }
 

@@ -14,7 +14,7 @@ Type=simple
 ExecStartPre=/bin/bash -c 'until curl -sf http://localhost:5173 >/dev/null; do sleep 1; done'
 ExecStart=/usr/bin/chromium-browser \
   --kiosk \
-  --app=http://localhost:5173 \
+  --app=http://localhost:5173/?kiosk=1 \
   --noerrdialogs \
   --disable-infobars \
   --disable-translate \

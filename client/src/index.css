@@ -16,12 +16,11 @@ html, body, #root {
   overscroll-behavior: none;
 }
 
-/* Kiosk mode (≥ lg, i.e. Pi wall display) hides scrollbars and the cursor.
-   On phones (< lg) we let the page scroll vertically and show the cursor. */
-@media (min-width: 1024px) {
-  html, body, #root { overflow: hidden; }
-  * { cursor: none !important; }
-}
+/* Kiosk mode (Pi wall display) hides scrollbars and the cursor. Triggered by
+   the `kiosk` class on <html>, set in main.jsx via ?kiosk=1 (persisted in
+   localStorage). Regular browsers — phone or laptop — keep their cursor. */
+html.kiosk, html.kiosk body, html.kiosk #root { overflow: hidden; }
+html.kiosk * { cursor: none !important; }
 @media (max-width: 1023px) {
   html, body, #root { overflow-x: hidden; }
 }

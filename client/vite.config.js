@@ -6,6 +6,8 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    // Tailnet-only deployment — accept any hostname (MagicDNS short name + *.ts.net).
+    allowedHosts: true,
     proxy: {
       '/api': 'http://localhost:3001',
     },

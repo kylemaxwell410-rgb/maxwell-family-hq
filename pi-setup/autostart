@@ -10,4 +10,4 @@
 @xset -dpms
 @xset s noblank
 @unclutter -idle 0.1 -root
-@bash -c 'until curl -sf http://localhost:5173 >/dev/null; do sleep 1; done; chromium-browser --kiosk --app=http://localhost:5173 --noerrdialogs --disable-infobars --no-first-run'
+@bash -c 'until curl -sf http://localhost:5173 >/dev/null; do sleep 1; done; chromium-browser --kiosk --app=http://localhost:5173/?kiosk=1 --noerrdialogs --disable-infobars --no-first-run'

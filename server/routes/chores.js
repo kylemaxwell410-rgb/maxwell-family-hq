@@ -10,6 +10,11 @@ function todayStr(d = new Date()) {
   return `${y}-${m}-${day}`;
 }
 
+function daysBetween(aStr, bStr) {
+  const ms = new Date(bStr + 'T00:00:00') - new Date(aStr + 'T00:00:00');
+  return Math.round(ms / 86400000);
+}
+
 // GET /api/chores?date=YYYY-MM-DD   -> chores with today's completion status
 router.get('/', (req, res) => {
   const date = req.query.date || todayStr();
@@ -27,16 +32,74 @@ router.get('/', (req, res) => {
   ).all(date);
   const compMap = new Map(completions.map(c => [c.chore_id, c.completed_at]));
 
-  const withStatus = chores
-    .filter(c => {
+  const lastCompletionStmt = db.prepare(
+    'SELECT MAX(completed_date) AS d FROM chore_completions WHERE chore_id = ? AND completed_date <= ?'
+  );
+  const completionSinceStmt = db.prepare(
+    'SELECT 1 FROM chore_completions WHERE chore_id = ? AND completed_date >= ? LIMIT 1'
+  );
+
+  // For weekly_rolling: walk back from today to find the most recent scheduled DOW.
+  function lastScheduledOnOrBefore(daysCsv, refDate) {
+    const days = daysCsv.split(',').map(Number);
+    let d = new Date(refDate + 'T00:00:00');
+    for (let back = 0; back < 7; back++) {
+      if (days.includes(d.getDay())) return todayStr(d);
+      d.setDate(d.getDate() - 1);
+    }
+    return refDate;
+  }
+
+  const withStatus = [];
+  for (const c of chores) {
+    const completed = compMap.has(c.id);
+    let include = false;
+    let overdue_days = 0;
+
+    if (c.frequency === 'interval' && c.interval_days) {
+      const last = lastCompletionStmt.get(c.id, date)?.d;
+      if (!last) {
+        include = true;
+        overdue_days = 0;
+      } else {
+        const due = (() => {
+          const d = new Date(last + 'T00:00:00');
+          d.setDate(d.getDate() + c.interval_days);
+          return todayStr(d);
+        })();
+        if (date >= due) {
+          include = true;
+          overdue_days = Math.max(0, daysBetween(due, date));
+        }
+      }
+    } else if (c.frequency === 'weekly_rolling') {
       const days = c.days_of_week.split(',').map(Number);
-      return days.includes(dow);
-    })
-    .map(c => ({
+      if (days.includes(dow)) {
+        include = true;
+        overdue_days = 0;
+      } else {
+        // Show every day after the scheduled DOW until completed.
+        const lastSched = lastScheduledOnOrBefore(c.days_of_week, date);
+        const completedSince = !!completionSinceStmt.get(c.id, lastSched);
+        if (!completedSince) {
+          include = true;
+          overdue_days = daysBetween(lastSched, date);
+        }
+      }
+    } else {
+      // daily / weekly — existing day-of-week match.
+      const days = c.days_of_week.split(',').map(Number);
+      include = days.includes(dow);
+    }
+
+    if (!include) continue;
+    withStatus.push({
       ...c,
-      completed: compMap.has(c.id),
+      completed,
       completed_at: compMap.get(c.id) || null,
-    }));
+      overdue_days,
+    });
+  }
 
   res.json(withStatus);
 });

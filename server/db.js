@@ -140,6 +140,23 @@ export function initSchema() {
     console.log('[db] added bedtime column to kids');
   }
 
+  // Idempotent migration: laundry_day on kids (INTEGER 0-6 = Sun..Sat, nullable).
+  try {
+    db.prepare('SELECT laundry_day FROM kids LIMIT 1').get();
+  } catch {
+    db.exec('ALTER TABLE kids ADD COLUMN laundry_day INTEGER');
+    console.log('[db] added laundry_day column to kids');
+  }
+
+  // Idempotent migration: interval_days on chores (INTEGER, nullable).
+  // Used when frequency = 'interval' — recurs every N days from last completion.
+  try {
+    db.prepare('SELECT interval_days FROM chores LIMIT 1').get();
+  } catch {
+    db.exec('ALTER TABLE chores ADD COLUMN interval_days INTEGER');
+    console.log('[db] added interval_days column to chores');
+  }
+
   // Family notes
   db.exec(`
     CREATE TABLE IF NOT EXISTS family_notes (

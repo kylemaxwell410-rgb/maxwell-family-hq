@@ -3,6 +3,15 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
 
+// Kiosk detection: Pi launches Chromium with ?kiosk=1; we persist the flag so
+// the Pi only needs to learn it once. Other devices (phone/laptop) never set it.
+const kioskParam = new URLSearchParams(location.search).get('kiosk');
+if (kioskParam === '1') localStorage.setItem('kiosk', '1');
+else if (kioskParam === '0') localStorage.removeItem('kiosk');
+if (localStorage.getItem('kiosk') === '1') {
+  document.documentElement.classList.add('kiosk');
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />

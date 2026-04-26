@@ -1,5 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, todayStr } from '../api.js';
+import PinModal from '../components/PinModal.jsx';
+
+const FAVORITE_CHORES = ['Make bed', 'Homework', 'Tidy room', 'Feed pets'];
+
+function parseQuickAdd(text, kids) {
+  const t = text.trim();
+  if (!t) return null;
+  const sep = /[:\s]+/;
+  const idx = t.search(sep);
+  if (idx <= 0) return null;
+  const name = t.slice(0, idx).replace(/[:\s]+$/, '').toLowerCase();
+  const title = t.slice(idx).replace(/^[:\s]+/, '').trim();
+  if (!title) return null;
+  const kid = kids.find(k => {
+    const n = k.name.toLowerCase();
+    return n === name || n.startsWith(name) || name.startsWith(n);
+  });
+  return kid ? { kid_id: kid.id, kid_name: kid.name, title } : null;
+}
 
 function startOfDay(d) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
 function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
@@ -16,6 +35,37 @@ export default function Chores({ kids: allKids, onKidsChange }) {
   const [events, setEvents] = useState([]);
   const [date] = useState(todayStr());
   const [loading, setLoading] = useState(true);
+  const [pin, setPin] = useState(() => localStorage.getItem('admin_pin') || null);
+  const [pinPrompt, setPinPrompt] = useState(false);
+  const pendingAction = useRef(null);
+
+  function withPin(action) {
+    if (pin) return action(pin);
+    pendingAction.current = action;
+    setPinPrompt(true);
+  }
+
+  async function addChore(kid_id, title) {
+    const t = title.trim();
+    if (!t) return;
+    await withPin(async (p) => {
+      try {
+        await api.createChore(p, { kid_id, title: t });
+        await loadAll();
+        onKidsChange?.();
+      } catch (err) {
+        if (/PIN/i.test(err.message)) {
+          localStorage.removeItem('admin_pin');
+          setPin(null);
+          pendingAction.current = (np) => api.createChore(np, { kid_id, title: t })
+            .then(() => loadAll()).then(() => onKidsChange?.());
+          setPinPrompt(true);
+        } else {
+          alert(err.message);
+        }
+      }
+    });
+  }
 
   async function loadAll() {
     setLoading(true);
@@ -65,6 +115,7 @@ export default function Chores({ kids: allKids, onKidsChange }) {
 
   return (
     <div className="overflow-auto p-3 lg:p-5 lg:h-full">
+      <QuickAddBar kids={kids} onAdd={addChore} />
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 lg:h-full">
         {kids.map(kid => {
           const list = byKid[kid.id] || [];
@@ -113,11 +164,21 @@ export default function Chores({ kids: allKids, onKidsChange }) {
                 {allDone ? (
                   <FreeTimeCard person={kid} events={personalEvents} />
                 ) : list.length === 0 ? (
-                  <div className="text-slate-500 text-center py-6 text-sm">
-                    No chores scheduled today
-                  </div>
+                  <>
+                    <PerKidAdd kid={kid} onAdd={addChore} />
+                    {kid.laundry_day != null && new Date().getDay() === kid.laundry_day && (
+                      <LaundryDayTile color={kid.color} />
+                    )}
+                    <div className="text-slate-500 text-center py-6 text-sm">
+                      No chores scheduled today
+                    </div>
+                  </>
                 ) : (
                   <div className="space-y-1.5">
+                    <PerKidAdd kid={kid} onAdd={addChore} />
+                    {kid.laundry_day != null && new Date().getDay() === kid.laundry_day && (
+                      <LaundryDayTile color={kid.color} />
+                    )}
                     {list.map(c => (
                       <button
                         key={c.id}
@@ -139,7 +200,12 @@ export default function Chores({ kids: allKids, onKidsChange }) {
                         <div className="flex-1 min-w-0">
                           <div className="text-[15px] font-bold truncate uppercase tracking-wide">{c.title}</div>
                         </div>
-                        {!isParent && (
+                        {c.overdue_days > 0 && !c.completed && (
+                          <div className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-600 whitespace-nowrap">
+                            Overdue {c.overdue_days}d
+                          </div>
+                        )}
+                        {!isParent && c.points > 0 && (
                           <div className="text-xs font-semibold px-2 py-0.5 rounded-md"
                             style={{ background: kid.color + '22', color: c.completed ? '#94a3b8' : kid.color }}>
                             +{c.points}
@@ -154,6 +220,140 @@ export default function Chores({ kids: allKids, onKidsChange }) {
           );
         })}
       </div>
+      {pinPrompt && (
+        <PinModal
+          onVerified={(p) => {
+            setPin(p);
+            localStorage.setItem('admin_pin', p);
+            setPinPrompt(false);
+            const fn = pendingAction.current;
+            pendingAction.current = null;
+            if (fn) fn(p);
+          }}
+          onCancel={() => { pendingAction.current = null; setPinPrompt(false); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function QuickAddBar({ kids, onAdd }) {
+  const [text, setText] = useState('');
+  const [err, setErr] = useState('');
+  const [hint, setHint] = useState('');
+
+  function submit(e) {
+    e.preventDefault();
+    const parsed = parseQuickAdd(text, kids);
+    if (!parsed) {
+      const example = kids[0]?.name || 'Kolt';
+      setErr(`Try "${example}: clean room"`);
+      return;
+    }
+    onAdd(parsed.kid_id, parsed.title);
+    setHint(`Added "${parsed.title}" for ${parsed.kid_name}`);
+    setText('');
+    setErr('');
+    setTimeout(() => setHint(''), 2500);
+  }
+
+  return (
+    <form onSubmit={submit} className="lg:hidden mb-3 flex flex-col gap-1">
+      <div className="flex gap-2">
+        <input
+          value={text}
+          onChange={(e) => { setText(e.target.value); setErr(''); }}
+          placeholder='Quick add — e.g. "Kolt: clean room"'
+          className="flex-1 px-3 py-2.5 rounded-xl bg-white border border-slate-300 text-[15px] focus:outline-none focus:border-slate-500"
+        />
+        <button
+          type="submit"
+          className="px-4 py-2.5 rounded-xl bg-slate-900 text-white font-semibold tap"
+        >
+          Add
+        </button>
+      </div>
+      {err   && <div className="text-xs text-rose-600 px-1">{err}</div>}
+      {hint  && <div className="text-xs text-emerald-600 px-1">{hint}</div>}
+    </form>
+  );
+}
+
+function PerKidAdd({ kid, onAdd }) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState('');
+
+  function add(t) {
+    const v = (t || '').trim();
+    if (!v) return;
+    onAdd(kid.id, v);
+    setTitle('');
+    setOpen(false);
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="lg:hidden w-full mb-1.5 px-2.5 py-2 rounded-xl border-2 border-dashed border-slate-300 text-slate-500 text-sm font-semibold tap hover:bg-slate-50"
+        style={{ borderColor: kid.color + '55', color: kid.color }}
+      >
+        + Add chore
+      </button>
+    );
+  }
+
+  return (
+    <div className="lg:hidden mb-1.5 p-2 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+      <div className="flex flex-wrap gap-1">
+        {FAVORITE_CHORES.map((f) => (
+          <button
+            key={f}
+            type="button"
+            onClick={() => add(f)}
+            className="text-xs px-2 py-1 rounded-full bg-white border border-slate-300 tap"
+          >
+            + {f}
+          </button>
+        ))}
+      </div>
+      <form
+        onSubmit={(e) => { e.preventDefault(); add(title); }}
+        className="flex gap-1"
+      >
+        <input
+          autoFocus
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="New chore…"
+          className="flex-1 px-2 py-2 rounded-lg bg-white border border-slate-300 text-sm focus:outline-none focus:border-slate-500"
+        />
+        <button
+          type="submit"
+          className="px-3 py-2 rounded-lg text-white text-sm font-semibold tap"
+          style={{ background: kid.color }}
+        >
+          Add
+        </button>
+        <button
+          type="button"
+          onClick={() => { setOpen(false); setTitle(''); }}
+          className="px-2 py-2 rounded-lg bg-slate-200 text-slate-600 text-sm tap"
+        >
+          ×
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function LaundryDayTile({ color }) {
+  return (
+    <div
+      className="w-full px-3 py-2 rounded-xl text-center font-bold uppercase tracking-wide text-white text-sm"
+      style={{ background: color }}
+    >
+      🧺 Laundry Day
     </div>
   );
 }
