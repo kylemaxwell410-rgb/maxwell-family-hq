@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, todayStr } from '../api.js';
 import { startOfDay, endOfDay, addDays } from '../utils/dateMath.js';
-import { fetchWeather, describeCode, getLocation } from '../utils/weather.js';
-import { upcomingBirthdays, nextBirthdayAny } from '../utils/birthdays.js';
-import { nextHoliday } from '../utils/holidays.js';
+import { fetchWeather, describeCode, getLocation, isWetForecast } from '../utils/weather.js';
+import { upcomingMixed } from '../utils/upcoming.js';
+import { suggestActivity } from '../utils/bored.js';
+import { fmtTime, fmtDateShort, fmtDayOfWeek } from '../utils/format.js';
 
 export default function Today({ kids: allKids, onKidsChange }) {
   const peopleForChores = useMemo(() => allKids.filter(k => k.role !== 'pet'), [allKids]);
@@ -15,7 +16,10 @@ export default function Today({ kids: allKids, onKidsChange }) {
   const [weather, setWeather]             = useState(null);
   const [weatherErr, setWeatherErr]       = useState(null);
   const [settings, setSettings]           = useState({});
+  const [notes, setNotes]                 = useState([]);
   const [now, setNow]                     = useState(new Date());
+  const [boredOpen, setBoredOpen]         = useState(false);
+  const [askOpen, setAskOpen]             = useState(false);
   const dStr = todayStr();
 
   async function loadEverything() {
@@ -23,18 +27,20 @@ export default function Today({ kids: allKids, onKidsChange }) {
     const todayEnd = endOfDay(new Date());
     const tomorrow    = startOfDay(addDays(new Date(), 1));
     const tomorrowEnd = endOfDay(addDays(new Date(), 1));
-    const [c, eToday, eTomorrow, m, s] = await Promise.all([
+    const [c, eToday, eTomorrow, m, s, n] = await Promise.all([
       api.chores(dStr),
       api.events(today.toISOString(), todayEnd.toISOString()),
       api.events(tomorrow.toISOString(), tomorrowEnd.toISOString()),
       api.meals(dStr, dStr),
       api.settings(),
+      api.notes(),
     ]);
     setChores(c);
     setTodayEvents(eToday);
     setTomorrowEvents(eTomorrow);
     setMeal((m || []).find(x => x.meal_type === 'dinner') || null);
     setSettings(s);
+    setNotes(n);
   }
 
   useEffect(() => {
@@ -79,17 +85,14 @@ export default function Today({ kids: allKids, onKidsChange }) {
 
   const sortedToday    = useMemo(() => [...todayEvents].sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime)), [todayEvents]);
   const sortedTomorrow = useMemo(() => [...tomorrowEvents].sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime)), [tomorrowEvents]);
-
-  const birthdaysToShow = useMemo(() => {
-    const within30 = upcomingBirthdays(allKids, new Date(), 30);
-    if (within30.length > 0) return within30;
-    const next = nextBirthdayAny(allKids);
-    return next ? [next] : [];
-  }, [allKids]);
-  const holiday = useMemo(() => nextHoliday(), []);
+  const upcoming       = useMemo(() => upcomingMixed(allKids, 5), [allKids]);
+  const wetWeather     = useMemo(() => isWetForecast(weather), [weather]);
 
   return (
-    <div className="h-full flex flex-col p-3 gap-3 overflow-hidden">
+    <div className="h-full flex flex-col p-3 gap-3 overflow-hidden relative">
+      {/* Family notes strip (only renders when notes exist; tappable to dismiss requires PIN via Admin) */}
+      {notes.length > 0 && <NotesStrip notes={notes} />}
+
       {/* Top row: Weather, Today, Tomorrow, Dinner */}
       <div className="grid grid-cols-[1.1fr_1fr_1fr_1fr] gap-3 h-[230px] flex-shrink-0">
         <WeatherCard weather={weather} err={weatherErr} />
@@ -110,18 +113,43 @@ export default function Today({ kids: allKids, onKidsChange }) {
         ))}
       </div>
 
-      {/* Bottom: countdowns */}
-      <CountdownStrip
-        birthdays={birthdaysToShow}
-        holiday={holiday}
-        bedtime={settings.bedtime}
-        now={now}
+      {/* Bottom: combined upcoming countdown (left) + bedtime (right) */}
+      <BottomStrip upcoming={upcoming} bedtime={settings.bedtime} now={now} />
+
+      {/* Floating action buttons */}
+      <FloatingActions
+        onAsk={() => setAskOpen(true)}
+        onBored={() => setBoredOpen(true)}
       />
+
+      {boredOpen && <BoredModal wet={wetWeather} onClose={() => setBoredOpen(false)} />}
+      {askOpen   && <AskModal kids={peopleForChores.filter(k => k.role === 'kid')} onClose={() => setAskOpen(false)} />}
     </div>
   );
 }
 
-/* =================== Weather (with 3-day forecast) =================== */
+/* =================== Notes strip =================== */
+
+function NotesStrip({ notes }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl flex-shrink-0">
+      <div className="text-lg emoji flex-shrink-0">📝</div>
+      <div className="text-[10px] uppercase tracking-wider text-amber-700 font-semibold flex-shrink-0">Notes</div>
+      <div className="flex gap-2 overflow-x-auto">
+        {notes.map(n => (
+          <div key={n.id} className="text-sm text-amber-900 bg-white/60 border border-amber-200 rounded-lg px-3 py-1 flex-shrink-0">
+            {n.body}
+            {n.expires_on && (
+              <span className="text-[10px] text-amber-600 ml-2">until {fmtDateShort(n.expires_on + 'T12:00:00')}</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* =================== Weather =================== */
 
 function WeatherCard({ weather, err }) {
   if (err)     return <Card title="Weather"><div className="text-rose-600 text-sm">{err}</div></Card>;
@@ -142,7 +170,10 @@ function WeatherCard({ weather, err }) {
         <div>
           <div className="text-sm text-slate-700">{desc.label}</div>
           <div className="text-[11px] text-slate-500 tabular-nums">
-            H {weather.today.highF}° · L {weather.today.lowF}° · {weather.today.precipPct ?? 0}% rain
+            H {weather.today.highF}° · L {weather.today.lowF}°
+          </div>
+          <div className="text-[11px] text-slate-500 tabular-nums">
+            Rain: {weather.today.precipPct ?? 0}% · {fmtPrecip(weather.today.precipSum)} in
           </div>
         </div>
       </div>
@@ -156,10 +187,17 @@ function WeatherCard({ weather, err }) {
   );
 }
 
+function fmtPrecip(inches) {
+  if (inches == null) return '0.00';
+  if (inches === 0)   return '0.00';
+  if (inches < 0.01)  return '<0.01';
+  return inches.toFixed(2);
+}
+
 function ForecastDay({ day, index }) {
   const desc = describeCode(day.code);
   const label = index === 0 ? 'Today' : index === 1 ? 'Tomorrow' :
-    new Date(day.date + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short' });
+    fmtDayOfWeek(day.date + 'T12:00:00');
   return (
     <div className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-center">
       <div className="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">{label}</div>
@@ -169,13 +207,13 @@ function ForecastDay({ day, index }) {
         <span className="text-slate-400"> / {day.lowF}°</span>
       </div>
       <div className="text-[10px] text-slate-400 tabular-nums">
-        {day.precipPct == null ? '' : `${day.precipPct}% rain`}
+        {day.precipPct == null ? '' : `${day.precipPct}% · ${fmtPrecip(day.precipSum)}″`}
       </div>
     </div>
   );
 }
 
-/* =================== Events (today / tomorrow) =================== */
+/* =================== Events =================== */
 
 function EventsCard({ title, events, kids }) {
   const colorFor = (kid_id) => kids.find(k => k.id === kid_id)?.color || '#94a3b8';
@@ -191,7 +229,7 @@ function EventsCard({ title, events, kids }) {
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold truncate text-slate-900">{e.title}</div>
                 <div className="text-[10px] text-slate-500 tabular-nums">
-                  {e.all_day ? 'All day' : new Date(e.start_datetime).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                  {e.all_day ? 'All day' : fmtTime(e.start_datetime)}
                 </div>
               </div>
             </div>
@@ -231,12 +269,23 @@ function PersonChoresTile({ kid, chores, onToggle }) {
   const possible = chores.reduce((s, c) => s + c.points, 0);
   const isParent = kid.role === 'parent';
 
+  const [celebrating, setCelebrating] = useState(false);
+  const prevAllDone = useRef(false);
+  useEffect(() => {
+    if (allDone && !prevAllDone.current) {
+      setCelebrating(true);
+      const t = setTimeout(() => setCelebrating(false), 4000);
+      return () => clearTimeout(t);
+    }
+    prevAllDone.current = allDone;
+  }, [allDone]);
+
   return (
     <div
-      className="flex flex-col rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+      className={`relative flex flex-col rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden ${celebrating ? 'celebrate-tile' : ''}`}
       style={{ boxShadow: `inset 0 4px 0 0 ${kid.color}, 0 1px 3px rgba(15,23,42,0.06)` }}
     >
-      {/* Header */}
+      {celebrating && <ConfettiOverlay color={kid.color} />}
       <div className="px-3 pt-2.5 pb-2 flex items-center justify-between border-b border-slate-100"
         style={{ background: `linear-gradient(180deg, ${kid.color}1A 0%, transparent 100%)` }}>
         <div className="flex items-center gap-2 min-w-0">
@@ -259,7 +308,6 @@ function PersonChoresTile({ kid, chores, onToggle }) {
         )}
       </div>
 
-      {/* Chore list */}
       <div className="flex-1 p-2 overflow-auto space-y-1.5">
         {chores.length === 0 ? (
           <div className="text-slate-400 text-center py-3 text-xs">No chores scheduled today</div>
@@ -297,41 +345,74 @@ function PersonChoresTile({ kid, chores, onToggle }) {
   );
 }
 
-/* =================== Countdown strip =================== */
-
-function CountdownStrip({ birthdays, holiday, bedtime, now }) {
+function ConfettiOverlay({ color }) {
+  const pieces = useMemo(() =>
+    Array.from({ length: 24 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 0.4,
+      duration: 1.2 + Math.random() * 1.6,
+      dx: (Math.random() - 0.5) * 80,
+      glyph: ['🎉', '✨', '⭐️', '🌟', '🎊'][i % 5],
+    })), []);
   return (
-    <div className="grid grid-cols-[1fr_auto_auto] gap-3 flex-shrink-0 h-[110px]">
-      <BirthdaysCard birthdays={birthdays} />
-      <BedtimeCard bedtime={bedtime} now={now} />
-      <HolidayCard holiday={holiday} />
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
+      {pieces.map(p => (
+        <span key={p.id} className="confetti-piece emoji"
+          style={{
+            left: `${p.left}%`,
+            color,
+            animationDelay: `${p.delay}s`,
+            '--dur': `${p.duration}s`,
+            '--dx': `${p.dx}px`,
+          }}>
+          {p.glyph}
+        </span>
+      ))}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="text-2xl font-extrabold text-slate-900 bg-white/80 px-3 py-1 rounded-full shadow-md emoji">
+          🎉 All done!
+        </div>
+      </div>
     </div>
   );
 }
 
-function BirthdaysCard({ birthdays }) {
-  const showingMany = birthdays.length > 1;
+/* =================== Bottom strip: upcoming (left) + bedtime (right) =================== */
+
+function BottomStrip({ upcoming, bedtime, now }) {
+  return (
+    <div className="grid grid-cols-[1fr_auto] gap-3 flex-shrink-0 h-[110px]">
+      <UpcomingCard items={upcoming} />
+      <BedtimeCard bedtime={bedtime} now={now} />
+    </div>
+  );
+}
+
+function UpcomingCard({ items }) {
   return (
     <div className="surface p-3 flex flex-col overflow-hidden">
-      <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1.5">
-        {showingMany ? 'Upcoming Birthdays · next 30 days' : 'Next Birthday'}
-      </div>
-      {birthdays.length === 0 ? (
-        <div className="text-slate-400 text-xs flex-1 flex items-center">
-          No birthdays on file. Add dates in Admin.
-        </div>
+      <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1.5">Coming Up</div>
+      {items.length === 0 ? (
+        <div className="text-slate-400 text-xs flex-1 flex items-center">Nothing on the horizon.</div>
       ) : (
-        <div className="flex gap-2 overflow-x-auto flex-1 items-center">
-          {birthdays.map(({ person, date, daysUntil, age }) => (
-            <div key={person.id}
+        <div className="flex gap-2 flex-1 items-center overflow-x-auto">
+          {items.map(item => (
+            <div key={item.key}
               className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 flex-shrink-0">
-              <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm text-white"
-                style={{ background: person.color }}>{person.initials}</div>
+              {item.type === 'birthday' ? (
+                <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm text-white flex-shrink-0"
+                  style={{ background: item.color }}>{item.person.initials}</div>
+              ) : (
+                <div className="text-2xl emoji flex-shrink-0">{item.emoji}</div>
+              )}
               <div>
-                <div className="text-sm font-bold leading-tight text-slate-900">{person.name}</div>
+                <div className="text-sm font-bold leading-tight text-slate-900 truncate max-w-[160px]">
+                  {item.type === 'birthday' ? `${item.label}'s Birthday` : item.label}
+                </div>
                 <div className="text-[10px] text-slate-500 leading-tight tabular-nums">
-                  {countdownLabel(daysUntil)} · {date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                  {age != null ? ` · turns ${age}` : ''}
+                  {countdownLabel(item.daysUntil)} · {fmtDateShort(item.date)}
+                  {item.type === 'birthday' && item.age != null ? ` · turns ${item.age}` : ''}
                 </div>
               </div>
             </div>
@@ -362,18 +443,123 @@ function BedtimeCard({ bedtime, now }) {
   );
 }
 
-function HolidayCard({ holiday }) {
-  if (!holiday) return null;
-  const days = Math.round((holiday.date - startOfDay(new Date())) / 86_400_000);
+/* =================== Floating actions =================== */
+
+function FloatingActions({ onAsk, onBored }) {
   return (
-    <div className="surface p-3 flex items-center gap-3 min-w-[230px]">
-      <div className="text-3xl emoji">{holiday.emoji}</div>
-      <div className="min-w-0">
-        <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Next Holiday</div>
-        <div className="text-base font-bold leading-tight truncate text-slate-900">{holiday.name}</div>
-        <div className="text-[10px] text-slate-500 leading-tight tabular-nums">
-          {countdownLabel(days)} · {holiday.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+    <div className="absolute right-5 bottom-32 flex flex-col gap-3 z-30">
+      <button onClick={onBored}
+        className="w-16 h-16 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-900 shadow-lg flex items-center justify-center text-2xl tap"
+        title="I'm bored — give me an idea!">
+        <span className="emoji">💡</span>
+      </button>
+      <button onClick={onAsk}
+        className="w-16 h-16 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg flex items-center justify-center text-2xl tap"
+        title="Ask Claude a question">
+        <span className="emoji">💬</span>
+      </button>
+    </div>
+  );
+}
+
+/* =================== Bored modal =================== */
+
+function BoredModal({ wet, onClose }) {
+  const [idea, setIdea] = useState(() => suggestActivity({ wet }));
+  return (
+    <Modal onClose={onClose} title="Try this!">
+      <div className="px-1 py-2">
+        <div className="text-2xl mb-2 emoji">{wet ? '☔️' : '☀️'}</div>
+        <p className="text-xl font-semibold text-slate-900 leading-snug">{idea}</p>
+        <p className="text-xs text-slate-500 mt-2">{wet ? 'Indoor pick — looks wet today.' : 'Get outside!'}</p>
+      </div>
+      <div className="flex gap-2 mt-4">
+        <button onClick={() => setIdea(suggestActivity({ wet, prev: idea }))}
+          className="flex-1 py-3 bg-amber-400 hover:bg-amber-300 text-slate-900 rounded-xl font-semibold tap">
+          Another idea
+        </button>
+        <button onClick={onClose}
+          className="px-6 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-semibold tap">Close</button>
+      </div>
+    </Modal>
+  );
+}
+
+/* =================== Ask Claude modal =================== */
+
+function AskModal({ kids, onClose }) {
+  const [question, setQuestion] = useState('');
+  const [kidName, setKidName]   = useState(kids[0]?.name || '');
+  const [answer, setAnswer]     = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState(null);
+
+  async function ask() {
+    if (!question.trim()) return;
+    setLoading(true); setError(null); setAnswer('');
+    try {
+      const r = await api.askBot(question, kidName);
+      setAnswer(r.answer);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Modal onClose={onClose} title="Ask Claude">
+      <div className="space-y-3">
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Who's asking?</label>
+          <div className="flex flex-wrap gap-2">
+            {kids.map(k => (
+              <button key={k.id} onClick={() => setKidName(k.name)}
+                className={`px-3 py-2 rounded-lg text-sm font-semibold tap border
+                  ${kidName === k.name ? 'border-slate-400 bg-slate-100' : 'border-slate-200 hover:bg-slate-50'}`}>
+                {k.name}
+              </button>
+            ))}
+          </div>
         </div>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Your question</label>
+          <textarea
+            className="w-full bg-white border border-slate-300 rounded-xl p-3 text-base text-slate-900 min-h-[88px]"
+            placeholder="What do you want to know?"
+            value={question}
+            onChange={e => setQuestion(e.target.value)}
+            autoFocus
+          />
+        </div>
+        {answer && (
+          <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-slate-900 whitespace-pre-wrap text-sm">
+            {answer}
+          </div>
+        )}
+        {error && <div className="text-rose-600 text-sm">{error}</div>}
+      </div>
+      <div className="flex gap-2 mt-4">
+        <button onClick={ask} disabled={loading || !question.trim()}
+          className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl font-semibold tap">
+          {loading ? 'Thinking…' : answer ? 'Ask another' : 'Ask'}
+        </button>
+        <button onClick={onClose}
+          className="px-6 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-semibold tap">Close</button>
+      </div>
+    </Modal>
+  );
+}
+
+/* =================== Modal shell =================== */
+
+function Modal({ title, children, onClose }) {
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-xl p-6 w-[560px] max-h-[90vh] overflow-auto"
+        onClick={e => e.stopPropagation()}>
+        {title && <h3 className="text-xl font-bold mb-3 text-slate-900">{title}</h3>}
+        {children}
       </div>
     </div>
   );
@@ -392,7 +578,7 @@ function bedtimeCountdown(bedtimeHHMM, now) {
   if (Number.isNaN(hh) || Number.isNaN(mm)) return null;
   const target = new Date(now);
   target.setHours(hh, mm, 0, 0);
-  const timeLabel = target.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  const timeLabel = fmtTime(target);
   const diffMs = target - now;
   if (diffMs <= 0) return { label: 'Past bedtime', timeLabel };
   const totalMin = Math.floor(diffMs / 60_000);

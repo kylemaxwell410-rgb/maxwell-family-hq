@@ -7,7 +7,7 @@ function endOfDay(d)   { const x = new Date(d); x.setHours(23,59,59,999); return
 
 function fmtEventTime(iso, allDay) {
   if (allDay) return 'All day';
-  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
 export default function Chores({ kids: allKids, onKidsChange }) {

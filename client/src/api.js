@@ -76,6 +76,29 @@ export const api = {
   updateSetting: (pin, key, value) => req(`/settings/${encodeURIComponent(key)}`, {
     method: 'PUT', headers: { 'x-admin-pin': pin }, body: JSON.stringify({ value }),
   }),
+
+  // family notes
+  notes: () => req('/notes'),
+  addNote: (pin, body, expires_on) => req('/notes', {
+    method: 'POST', headers: { 'x-admin-pin': pin }, body: JSON.stringify({ body, expires_on }),
+  }),
+  updateNote: (pin, id, body, expires_on) => req(`/notes/${id}`, {
+    method: 'PUT', headers: { 'x-admin-pin': pin }, body: JSON.stringify({ body, expires_on }),
+  }),
+  deleteNote: (pin, id) => req(`/notes/${id}`, {
+    method: 'DELETE', headers: { 'x-admin-pin': pin },
+  }),
+
+  // bot
+  askBot: (question, kid_name) => req('/bot/ask', {
+    method: 'POST', body: JSON.stringify({ question, kid_name }),
+  }),
+  botLog: (pin, limit) => req(`/bot/log${limit ? `?limit=${limit}` : ''}`, {
+    headers: { 'x-admin-pin': pin },
+  }),
+  clearBotLog: (pin) => req('/bot/log', {
+    method: 'DELETE', headers: { 'x-admin-pin': pin },
+  }),
 };
 
 export function todayStr(d = new Date()) {

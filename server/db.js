@@ -140,7 +140,7 @@ export function initSchema() {
     console.log('[db] added bedtime column to kids');
   }
 
-  // Family notes (Chunk 2 hook — table created now so the API surface is stable).
+  // Family notes
   db.exec(`
     CREATE TABLE IF NOT EXISTS family_notes (
       id TEXT PRIMARY KEY,
@@ -148,6 +148,19 @@ export function initSchema() {
       expires_on TEXT,
       created_at TEXT NOT NULL
     );
+  `);
+
+  // Bot Q&A audit log: every kid question + Claude's answer for parent visibility.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS bot_messages (
+      id TEXT PRIMARY KEY,
+      kid_name TEXT,
+      question TEXT NOT NULL,
+      answer TEXT,
+      error TEXT,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_bot_messages_created ON bot_messages(created_at);
   `);
 
   // Family-wide settings (bedtime, future bot key, etc.).

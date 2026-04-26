@@ -26,9 +26,10 @@ export async function fetchWeather() {
   url.searchParams.set('latitude', loc.latitude);
   url.searchParams.set('longitude', loc.longitude);
   url.searchParams.set('current', 'temperature_2m,weather_code,is_day,wind_speed_10m');
-  url.searchParams.set('daily', 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset');
+  url.searchParams.set('daily', 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,sunrise,sunset');
   url.searchParams.set('temperature_unit', 'fahrenheit');
   url.searchParams.set('wind_speed_unit', 'mph');
+  url.searchParams.set('precipitation_unit', 'inch');
   url.searchParams.set('timezone', loc.timezone);
   url.searchParams.set('forecast_days', '3');
   const res = await fetch(url);
@@ -40,6 +41,7 @@ export async function fetchWeather() {
     highF: Math.round(data.daily.temperature_2m_max[i]),
     lowF:  Math.round(data.daily.temperature_2m_min[i]),
     precipPct: data.daily.precipitation_probability_max?.[i] ?? null,
+    precipSum: data.daily.precipitation_sum?.[i] ?? null, // inches (request asks for inch units)
     sunrise: data.daily.sunrise?.[i],
     sunset:  data.daily.sunset?.[i],
   }));

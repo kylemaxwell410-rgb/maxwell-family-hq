@@ -7,10 +7,11 @@ const DOW = ['S','M','T','W','T','F','S'];
 export default function Admin({ kids, onKidsChange }) {
   const [pin, setPin] = useState(null);
   const [chores, setChores] = useState([]);
-  const [section, setSection] = useState('chores'); // chores | kids | points | settings
+  const [section, setSection] = useState('chores'); // chores | kids | points | settings | notes
   const [editing, setEditing] = useState(null);
   const [adjust, setAdjust] = useState(null);
   const [settings, setSettings] = useState({});
+  const [notes, setNotes] = useState([]);
 
   async function loadChores() {
     if (!pin) return;
@@ -19,8 +20,11 @@ export default function Admin({ kids, onKidsChange }) {
   async function loadSettings() {
     setSettings(await api.settings());
   }
+  async function loadNotes() {
+    setNotes(await api.notes());
+  }
   useEffect(() => { loadChores(); }, [pin]);
-  useEffect(() => { loadSettings(); }, []);
+  useEffect(() => { loadSettings(); loadNotes(); }, []);
 
   if (!pin) return <PinModal onVerified={setPin} onCancel={() => setPin(null)} />;
 
@@ -55,11 +59,19 @@ export default function Admin({ kids, onKidsChange }) {
     await api.updateSetting(pin, key, value);
     await loadSettings();
   }
+  async function addNote(body, expires_on) {
+    await api.addNote(pin, body, expires_on);
+    await loadNotes();
+  }
+  async function removeNote(id) {
+    await api.deleteNote(pin, id);
+    await loadNotes();
+  }
 
   return (
     <div className="h-full flex gap-4 p-6 overflow-hidden">
       <nav className="w-52 flex flex-col gap-1">
-        {['chores','kids','points','settings'].map(s => (
+        {['chores','kids','notes','points','settings'].map(s => (
           <button key={s} onClick={() => setSection(s)}
             className={`px-4 py-3 rounded-xl font-semibold capitalize text-left tap
               ${section === s ? 'bg-slate-200' : 'hover:bg-slate-100 text-slate-500'}`}>
@@ -127,6 +139,10 @@ export default function Admin({ kids, onKidsChange }) {
 
         {section === 'settings' && (
           <SettingsSection settings={settings} onSave={saveSetting} />
+        )}
+
+        {section === 'notes' && (
+          <NotesSection notes={notes} onAdd={addNote} onRemove={removeNote} />
         )}
 
         {section === 'points' && (
@@ -339,6 +355,7 @@ function Modal({ children }) {
 
 function SettingsSection({ settings, onSave }) {
   const [bedtime, setBedtime] = useState(settings.bedtime || '20:45');
+  const [apiKey, setApiKey]   = useState('');
   const [weatherLat, setWeatherLat] = useState('');
   const [weatherLon, setWeatherLon] = useState('');
   const [weatherLabel, setWeatherLabel] = useState('');
@@ -389,6 +406,26 @@ function SettingsSection({ settings, onSave }) {
 
         <div className="border-t border-slate-200 pt-5">
           <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+            Anthropic API key (powers the Ask Claude bot)
+          </label>
+          <div className="flex gap-2 items-center">
+            <input
+              type="password"
+              className="input flex-1 max-w-[480px]"
+              placeholder={settings.anthropic_api_key ? 'Saved · enter a new key to replace' : 'sk-ant-api03-…'}
+              value={apiKey}
+              onChange={e => setApiKey(e.target.value)} />
+            <button onClick={async () => { await onSave('anthropic_api_key', apiKey); setApiKey(''); }}
+              disabled={!apiKey}
+              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg font-semibold tap">Save</button>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            {settings.anthropic_api_key ? 'A key is saved. Bot is enabled.' : 'No key saved — the Ask Claude tile is disabled.'}
+          </p>
+        </div>
+
+        <div className="border-t border-slate-200 pt-5">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
             Weather location (override default Callahan, FL)
           </label>
           <div className="grid grid-cols-3 gap-2 max-w-[600px]">
@@ -402,6 +439,58 @@ function SettingsSection({ settings, onSave }) {
           <button onClick={saveLocation}
             className="mt-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold tap">Save location</button>
           <p className="text-xs text-slate-500 mt-1">Stored in this browser only. Leave blank to use the default.</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function NotesSection({ notes, onAdd, onRemove }) {
+  const [body, setBody] = useState('');
+  const [expires, setExpires] = useState('');
+
+  async function submit() {
+    if (!body.trim()) return;
+    await onAdd(body, expires || null);
+    setBody(''); setExpires('');
+  }
+
+  return (
+    <>
+      <div className="p-4 border-b border-slate-200"><h2 className="text-xl font-bold">Family Notes</h2></div>
+      <div className="p-6 space-y-5 overflow-auto">
+        <div className="space-y-2">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">New note</label>
+          <textarea className="input min-h-[80px]" placeholder="e.g. No school Friday — teacher workday"
+            value={body} onChange={e => setBody(e.target.value)} />
+          <div className="flex gap-2 items-center">
+            <input type="date" className="input max-w-[200px]" value={expires} onChange={e => setExpires(e.target.value)} />
+            <span className="text-xs text-slate-500">(optional — auto-removes after this date)</span>
+            <button onClick={submit} disabled={!body.trim()}
+              className="ml-auto px-5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg font-semibold tap">Add</button>
+          </div>
+        </div>
+
+        <div className="border-t border-slate-200 pt-4">
+          <div className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-2">Active notes ({notes.length})</div>
+          {notes.length === 0 ? (
+            <div className="text-sm text-slate-400">No notes yet.</div>
+          ) : (
+            <ul className="space-y-2">
+              {notes.map(n => (
+                <li key={n.id} className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-slate-900">{n.body}</div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      {n.expires_on ? `Expires ${n.expires_on}` : 'No expiry'}
+                    </div>
+                  </div>
+                  <button onClick={() => onRemove(n.id)}
+                    className="px-3 py-1.5 text-rose-600 hover:bg-rose-50 rounded-lg font-semibold text-sm tap">Remove</button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </>

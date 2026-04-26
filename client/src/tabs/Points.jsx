@@ -107,7 +107,7 @@ export default function Points({ kids: allKids, onKidsChange }) {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{t.reason}</div>
                   <div className="text-xs text-slate-500">
-                    {new Date(t.created_at).toLocaleString(undefined, { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' })}
+                    {new Date(t.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12: true })}
                     {!selectedKid && kid && ` · ${kid.name}`}
                   </div>
                 </div>

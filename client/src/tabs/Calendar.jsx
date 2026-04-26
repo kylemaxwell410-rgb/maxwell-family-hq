@@ -14,7 +14,7 @@ function sameDay(a, b) { return startOfDay(a).getTime() === startOfDay(b).getTim
 
 function fmtTime(iso, allDay) {
   if (allDay) return 'All day';
-  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
 function dayLabel(date) {
@@ -23,11 +23,11 @@ function dayLabel(date) {
   const diff = Math.round((d - today) / 86400000);
   if (diff === 0) return 'TODAY';
   if (diff === 1) return 'TOMORROW';
-  return date.toLocaleDateString(undefined, { weekday: 'long' }).toUpperCase();
+  return date.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
 }
 
 function dateSubtitle(date) {
-  return date.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+  return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
 }
 
 export default function Calendar({ kids }) {

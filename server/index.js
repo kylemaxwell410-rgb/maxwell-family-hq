@@ -9,6 +9,8 @@ import shoppingRouter from './routes/shopping.js';
 import pointsRouter from './routes/points.js';
 import adminRouter from './routes/admin.js';
 import settingsRouter from './routes/settings.js';
+import notesRouter from './routes/notes.js';
+import botRouter from './routes/bot.js';
 
 initSchema();
 seedIfEmpty();
@@ -32,6 +34,8 @@ app.use('/api/shopping', shoppingRouter);
 app.use('/api/points', pointsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/notes', notesRouter);
+app.use('/api/bot', botRouter);
 
 app.use((err, _req, res, _next) => {
   console.error('[api]', err);

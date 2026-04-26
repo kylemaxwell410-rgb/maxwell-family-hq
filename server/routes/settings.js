@@ -10,10 +10,17 @@ function requirePin(req, res, next) {
   next();
 }
 
+// Keys whose value is sensitive — replace with a boolean flag so the client
+// can show "saved" / "not saved" without leaking the secret.
+const SECRET_KEYS = new Set(['anthropic_api_key']);
+
 router.get('/', (_req, res) => {
   const rows = db.prepare('SELECT key, value FROM settings').all();
   const out = {};
-  for (const r of rows) out[r.key] = r.value;
+  for (const r of rows) {
+    if (SECRET_KEYS.has(r.key)) out[r.key] = r.value ? true : false;
+    else out[r.key] = r.value;
+  }
   res.json(out);
 });
 

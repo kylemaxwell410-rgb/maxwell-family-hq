@@ -83,7 +83,7 @@ export default function Meals() {
           {days.map(d => (
             <div key={d.toISOString()} className="text-center py-2">
               <div className="text-xs uppercase text-slate-500 font-semibold">
-                {d.toLocaleDateString(undefined, { weekday: 'short' })}
+                {d.toLocaleDateString('en-US', { weekday: 'short' })}
               </div>
               <div className="text-base font-bold">{d.getDate()}</div>
             </div>
