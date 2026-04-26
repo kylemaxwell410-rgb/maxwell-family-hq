@@ -90,13 +90,12 @@ export default function Today({ kids: allKids, onKidsChange }) {
   const fact           = useMemo(() => factForToday(now), [now]);
 
   return (
-    <div className="h-full flex flex-col p-3 gap-3 overflow-hidden relative">
-      {/* Family notes strip + fun fact ribbon */}
+    <div className="flex flex-col gap-3 p-3 lg:h-full lg:overflow-hidden">
       {notes.length > 0 && <NotesStrip notes={notes} />}
       <FunFactStrip fact={fact} />
 
       {/* Top row: Weather, Today, Tomorrow, Dinner */}
-      <div className="grid grid-cols-[1.1fr_1fr_1fr_1fr] gap-3 h-[230px] flex-shrink-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.1fr_1fr_1fr_1fr] gap-3 lg:h-[230px] flex-shrink-0">
         <WeatherCard weather={weather} err={weatherErr} />
         <EventsCard title="Today's Events"    events={sortedToday}    kids={allKids} />
         <EventsCard title="Tomorrow's Events" events={sortedTomorrow} kids={allKids} />
@@ -104,7 +103,7 @@ export default function Today({ kids: allKids, onKidsChange }) {
       </div>
 
       {/* MAIN: chores grid */}
-      <div className="grid grid-cols-6 gap-3 flex-1 min-h-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 lg:flex-1 lg:min-h-0">
         {peopleForChores.map(kid => (
           <PersonChoresTile
             key={kid.id}
@@ -290,10 +289,16 @@ function PersonChoresTile({ kid, chores, onToggle, streak = 0 }) {
     prevAllDone.current = allDone;
   }, [allDone]);
 
+  const needsAttention = total > 0 && !allDone && !celebrating;
   return (
     <div
-      className={`relative flex flex-col rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden ${celebrating ? 'celebrate-tile' : ''}`}
-      style={{ boxShadow: `inset 0 4px 0 0 ${kid.color}, 0 1px 3px rgba(15,23,42,0.06)` }}
+      className={`relative flex flex-col rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden
+        ${celebrating ? 'celebrate-tile' : ''}
+        ${needsAttention ? 'attention-pending' : ''}`}
+      style={{
+        boxShadow: `inset 0 4px 0 0 ${kid.color}, 0 1px 3px rgba(15,23,42,0.06)`,
+        '--attention-color': kid.color,
+      }}
     >
       {celebrating && <ConfettiOverlay color={kid.color} />}
       <div className="px-3 pt-2.5 pb-2 flex items-center justify-between border-b border-slate-100"

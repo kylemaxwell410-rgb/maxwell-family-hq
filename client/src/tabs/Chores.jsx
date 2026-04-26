@@ -64,8 +64,8 @@ export default function Chores({ kids: allKids, onKidsChange }) {
   }
 
   return (
-    <div className="h-full overflow-auto p-5">
-      <div className="grid grid-cols-6 gap-3 h-full">
+    <div className="overflow-auto p-3 lg:p-5 lg:h-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 lg:h-full">
         {kids.map(kid => {
           const list = byKid[kid.id] || [];
           const done = list.filter(c => c.completed).length;

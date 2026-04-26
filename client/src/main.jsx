@@ -23,3 +23,12 @@ async function checkVersion() {
 }
 checkVersion();
 setInterval(checkVersion, 30_000);
+
+// Register a minimal service worker so phones can "Add to Home Screen" and
+// open the planner as a standalone app. Skip on the kiosk (no benefit) and
+// in dev (Vite hot reload conflicts).
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}

@@ -155,16 +155,16 @@ export function AskModal({ kids, onClose }) {
   );
 }
 
-/* Pill action button used in the header */
+/* Pill action button used in the header. Compact on mobile, full label on tablet+. */
 export function ActionPill({ kind, onClick }) {
   const styles = kind === 'bored'
     ? { bg: 'bg-amber-400 hover:bg-amber-300 text-slate-900', emoji: '💡', label: "I'm Bored" }
     : { bg: 'bg-indigo-600 hover:bg-indigo-500 text-white',     emoji: '💬', label: 'Ask Max' };
   return (
     <button onClick={onClick}
-      className={`px-4 h-11 rounded-full ${styles.bg} shadow flex items-center gap-2 font-semibold tap`}>
+      className={`px-3 sm:px-4 h-11 rounded-full ${styles.bg} shadow flex items-center gap-1.5 sm:gap-2 font-semibold tap text-sm sm:text-base`}>
       <span className="emoji text-xl">{styles.emoji}</span>
-      <span>{styles.label}</span>
+      <span className="hidden sm:inline">{styles.label}</span>
     </button>
   );
 }

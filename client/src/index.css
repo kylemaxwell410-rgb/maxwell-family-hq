@@ -14,11 +14,19 @@ html, body, #root {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
-  overflow: hidden;
+}
+
+/* Kiosk mode (≥ lg, i.e. Pi wall display) hides scrollbars and the cursor.
+   On phones (< lg) we let the page scroll vertically and show the cursor. */
+@media (min-width: 1024px) {
+  html, body, #root { overflow: hidden; }
+  * { cursor: none !important; }
+}
+@media (max-width: 1023px) {
+  html, body, #root { overflow-x: hidden; }
 }
 
 * {
-  cursor: none !important;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -66,5 +74,13 @@ button, [role="button"], .tap {
   pointer-events: none;
   animation: confetti-fall var(--dur, 1.6s) ease-in forwards;
 }
+
+/* Subtle attention pulse for chore tiles that still have work to do.
+   Slow ease, kid-color outline ring fades in and out — not dramatic, just present. */
+@keyframes attention-pulse {
+  0%, 100% { outline: 2px solid transparent; outline-offset: 0; }
+  50%      { outline: 3px solid var(--attention-color, #6366f1); outline-offset: 4px; }
+}
+.attention-pending { animation: attention-pulse 3.6s ease-in-out infinite; }
 
 ::-webkit-scrollbar { width: 0; height: 0; }

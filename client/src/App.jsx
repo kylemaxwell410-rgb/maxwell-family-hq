@@ -41,10 +41,10 @@ export default function App() {
   }, []);
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-slate-100 text-slate-900 overflow-hidden">
+    <div className="min-h-screen w-screen flex flex-col bg-slate-100 text-slate-900 lg:h-screen lg:overflow-hidden">
       <Header onBored={() => setBoredOpen(true)} onAsk={() => setAskOpen(true)} />
       <TabNav tabs={TABS} current={tab} onChange={setTab} />
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 lg:overflow-hidden">
         {tab === 'today'    && <Today    kids={kids} onKidsChange={loadKids} />}
         {tab === 'chores'   && <Chores   kids={kids} onKidsChange={loadKids} />}
         {tab === 'calendar' && <Calendar kids={kids} />}
