@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import Header from './components/Header.jsx';
 import TabNav from './components/TabNav.jsx';
-import { BoredModal, AskModal } from './components/QuickActions.jsx';
+import { BoredModal, AskModal, ActionPill } from './components/QuickActions.jsx';
 import VirtualKeyboard from './components/VirtualKeyboard.jsx';
 import StickyNote from './components/StickyNote.jsx';
 import Today from './tabs/Today.jsx';
@@ -46,10 +46,14 @@ export default function App() {
     <div className="min-h-screen w-screen flex flex-col bg-slate-100 text-slate-900 lg:h-screen lg:overflow-hidden">
       <div className="bg-white border-b border-slate-200 flex items-stretch">
         <div className="flex-1 min-w-0 flex flex-col">
-          <Header onBored={() => setBoredOpen(true)} onAsk={() => setAskOpen(true)} bare />
+          <Header bare />
           <TabNav tabs={TABS} current={tab} onChange={setTab} bare />
         </div>
         <StickyNote />
+        <div className="flex self-start gap-2 p-3 flex-shrink-0">
+          <ActionPill kind="bored" onClick={() => setBoredOpen(true)} />
+          <ActionPill kind="ask"   onClick={() => setAskOpen(true)} />
+        </div>
       </div>
       <main className="flex-1 lg:overflow-hidden">
         {tab === 'today'    && <Today    kids={kids} onKidsChange={loadKids} />}
