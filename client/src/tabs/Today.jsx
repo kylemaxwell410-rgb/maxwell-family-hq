@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api, todayStr } from '../api.js';
 import { startOfDay, endOfDay } from '../utils/dateMath.js';
 import { fetchWeather, describeCode, getLocation } from '../utils/weather.js';
-import { upcomingBirthdays } from '../utils/birthdays.js';
+import { upcomingBirthdays, nextBirthdayAny } from '../utils/birthdays.js';
 import { nextHoliday } from '../utils/holidays.js';
 
 export default function Today({ kids: allKids, onKidsChange }) {
@@ -78,7 +78,13 @@ export default function Today({ kids: allKids, onKidsChange }) {
     [events]
   );
 
-  const birthdaysSoon = useMemo(() => upcomingBirthdays(allKids), [allKids]);
+  // If birthdays are within 30 days, show all of them; otherwise show just the next one (any distance).
+  const birthdaysToShow = useMemo(() => {
+    const within30 = upcomingBirthdays(allKids, new Date(), 30);
+    if (within30.length > 0) return within30;
+    const next = nextBirthdayAny(allKids);
+    return next ? [next] : [];
+  }, [allKids]);
   const holiday = useMemo(() => nextHoliday(), []);
 
   return (
@@ -104,7 +110,7 @@ export default function Today({ kids: allKids, onKidsChange }) {
 
       {/* Bottom: countdowns */}
       <CountdownStrip
-        birthdays={birthdaysSoon}
+        birthdays={birthdaysToShow}
         holiday={holiday}
         bedtime={settings.bedtime}
         now={now}
@@ -303,14 +309,15 @@ function CountdownStrip({ birthdays, holiday, bedtime, now }) {
 }
 
 function BirthdaysCard({ birthdays }) {
+  const showingMany = birthdays.length > 1;
   return (
     <div className="bg-[#111923] border border-white/5 rounded-2xl p-3 flex flex-col overflow-hidden">
       <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1.5">
-        Birthdays {birthdays.length > 0 ? '· next 30 days' : ''}
+        {showingMany ? 'Upcoming Birthdays · next 30 days' : 'Next Birthday'}
       </div>
       {birthdays.length === 0 ? (
         <div className="text-slate-500 text-xs flex-1 flex items-center">
-          No birthdays in the next 30 days.
+          No birthdays on file. Add dates in Admin.
         </div>
       ) : (
         <div className="flex gap-2 overflow-x-auto flex-1 items-center">
