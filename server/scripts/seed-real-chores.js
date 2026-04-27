@@ -67,13 +67,13 @@ const CHORES = [
   { kid: 'Emma', title: 'Feed and water gerbils — 9am',                            frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
   { kid: 'Emma', title: 'Dog meds — heartworm/flea/tick (her dog)',                frequency: 'interval',        days_of_week: '0,1,2,3,4,5,6', interval_days: 30, anchor_days_ago: 2 },
 
-  // PRESTON
-  { kid: 'Preston', title: 'Unload dishwasher + counter dishes — 9am',             frequency: 'weekly',          days_of_week: '2,4,6' },
-  { kid: 'Preston', title: 'Unload dishwasher + counter dishes — 7pm',             frequency: 'weekly',          days_of_week: '2,4,6' },
-  { kid: 'Preston', title: 'Tidy living room',                                     frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
-  { kid: 'Preston', title: 'Feed and water dogs — 9am',                            frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
-  { kid: 'Preston', title: 'Feed and water dogs — 6pm',                            frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
-  { kid: 'Preston', title: 'Feed and water gerbils',                               frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  // PRESTON  — emoji prefixes to help him recognize chores by sight.
+  { kid: 'Preston', title: '🍽️ Unload dishwasher + counter dishes — 9am',           frequency: 'weekly',          days_of_week: '2,4,6' },
+  { kid: 'Preston', title: '🍽️ Unload dishwasher + counter dishes — 7pm',           frequency: 'weekly',          days_of_week: '2,4,6' },
+  { kid: 'Preston', title: '🛋️ Tidy living room',                                   frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Preston', title: '🐕 Feed and water dogs — 9am',                          frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Preston', title: '🐕 Feed and water dogs — 6pm',                          frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Preston', title: '🐹 Feed and water gerbils',                             frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
 
   // MOM
   { kid: 'Mom', title: 'Fertilize roses',                                          frequency: 'interval',        days_of_week: '0,1,2,3,4,5,6', interval_days: 42, anchor_days_ago: 42 },
