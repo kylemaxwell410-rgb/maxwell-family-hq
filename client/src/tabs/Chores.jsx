@@ -174,9 +174,6 @@ export default function Chores({ kids: allKids, onKidsChange }) {
                 ) : list.length === 0 ? (
                   <>
                     <PerKidAdd kid={kid} onAdd={addChore} />
-                    {kid.laundry_day != null && new Date().getDay() === kid.laundry_day && (
-                      <LaundryDayTile color={kid.color} />
-                    )}
                     <div className="text-slate-500 text-center py-6 text-sm">
                       No chores scheduled today
                     </div>
@@ -184,9 +181,6 @@ export default function Chores({ kids: allKids, onKidsChange }) {
                 ) : (
                   <div className="space-y-1.5">
                     <PerKidAdd kid={kid} onAdd={addChore} />
-                    {kid.laundry_day != null && new Date().getDay() === kid.laundry_day && (
-                      <LaundryDayTile color={kid.color} />
-                    )}
                     {list.map(c => (
                       <div
                         key={c.id}
@@ -236,6 +230,13 @@ export default function Chores({ kids: allKids, onKidsChange }) {
                   </div>
                 )}
               </div>
+              {/* Laundry-day footer: shows on the kid's assigned weekday
+                  regardless of whether they have chores or are all-done. */}
+              {kid.laundry_day != null && new Date().getDay() === kid.laundry_day && (
+                <div className="px-3 pb-3">
+                  <LaundryDayTile color={kid.color} />
+                </div>
+              )}
             </div>
           );
         })}
