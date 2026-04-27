@@ -10,7 +10,7 @@ import Calendar from './tabs/Calendar.jsx';
 import Meals from './tabs/Meals.jsx';
 import Points from './tabs/Points.jsx';
 import Admin from './tabs/Admin.jsx';
-import { api } from './api.js';
+import { api, todayStr } from './api.js';
 
 const TABS = [
   { id: 'today',    label: 'Today' },
@@ -27,6 +27,10 @@ export default function App() {
   const [kids, setKids] = useState([]);
   const [boredOpen, setBoredOpen] = useState(false);
   const [askOpen, setAskOpen]     = useState(false);
+  // Date key — bumps when the local day rolls over so each tab remounts
+  // with fresh state at midnight (otherwise chores/events stay frozen on
+  // yesterday's date until someone reloads).
+  const [dateKey, setDateKey] = useState(todayStr());
 
   async function loadKids() {
     try {
@@ -39,6 +43,13 @@ export default function App() {
   useEffect(() => { loadKids(); }, []);
   useEffect(() => {
     const id = setInterval(() => loadKids(), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  useEffect(() => {
+    const id = setInterval(() => {
+      const t = todayStr();
+      setDateKey(prev => (prev === t ? prev : t));
+    }, 30_000);
     return () => clearInterval(id);
   }, []);
 
@@ -56,12 +67,12 @@ export default function App() {
         </div>
       </div>
       <main className="flex-1 lg:overflow-hidden">
-        {tab === 'today'    && <Today    kids={kids} onKidsChange={loadKids} />}
-        {tab === 'chores'   && <Chores   kids={kids} onKidsChange={loadKids} />}
-        {tab === 'calendar' && <Calendar kids={kids} />}
-        {tab === 'meals'    && <Meals    />}
-        {tab === 'points'   && <Points   kids={kids} onKidsChange={loadKids} />}
-        {tab === 'admin'    && <Admin    kids={kids} onKidsChange={loadKids} />}
+        {tab === 'today'    && <Today    key={dateKey} kids={kids} onKidsChange={loadKids} />}
+        {tab === 'chores'   && <Chores   key={dateKey} kids={kids} onKidsChange={loadKids} />}
+        {tab === 'calendar' && <Calendar key={dateKey} kids={kids} />}
+        {tab === 'meals'    && <Meals    key={dateKey} />}
+        {tab === 'points'   && <Points   key={dateKey} kids={kids} onKidsChange={loadKids} />}
+        {tab === 'admin'    && <Admin    key={dateKey} kids={kids} onKidsChange={loadKids} />}
       </main>
       {boredOpen && <BoredModal onClose={() => setBoredOpen(false)} />}
       {askOpen   && <AskModal kids={kids} onClose={() => setAskOpen(false)} />}
