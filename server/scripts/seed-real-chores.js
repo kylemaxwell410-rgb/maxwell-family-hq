@@ -56,7 +56,7 @@ const CHORES = [
   { kid: 'Michael-ann', title: '🍽️ Dishes (load + wash) — 7pm',                     frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
   { kid: 'Michael-ann', title: '🧹 Tidy kitchen',                                   frequency: 'weekly',          days_of_week: '0,1,3,5' },
   { kid: 'Michael-ann', title: '🐾 Feed animals — evening',                         frequency: 'weekly',          days_of_week: '2,4,6' },
-  { kid: 'Michael-ann', title: '🧼 Clean gerbil cages',                             frequency: 'interval',        days_of_week: '0,1,2,3,4,5,6', interval_days: 10, anchor_days_ago: 10 },
+  { kid: 'Michael-ann', title: '🧼 Clean gerbil cages',                             frequency: 'interval',        days_of_week: '0,1,2,3,4,5,6', interval_days: 10, anchor_days_ago: 9 },
   { kid: 'Michael-ann', title: '💊 Dog meds — heartworm/flea/tick (her dog)',       frequency: 'interval',        days_of_week: '0,1,2,3,4,5,6', interval_days: 30, anchor_days_ago: 2 },
 
   // EMMA
@@ -68,7 +68,9 @@ const CHORES = [
   { kid: 'Emma', title: '💊 Dog meds — heartworm/flea/tick (her dog)',              frequency: 'interval',        days_of_week: '0,1,2,3,4,5,6', interval_days: 30, anchor_days_ago: 2 },
 
   // PRESTON  — emoji prefixes to help him recognize chores by sight.
-  { kid: 'Preston', title: '🍽️ Unload dishwasher + counter dishes — 9am',           frequency: 'weekly',          days_of_week: '2,4,6' },
+  // Dishwasher: 9am only on Saturday; 7pm on Tue/Thu/Sat. So Tue and Thu
+  // are once-daily (7pm only) to lighten his load on those days.
+  { kid: 'Preston', title: '🍽️ Unload dishwasher + counter dishes — 9am',           frequency: 'weekly',          days_of_week: '6' },
   { kid: 'Preston', title: '🍽️ Unload dishwasher + counter dishes — 7pm',           frequency: 'weekly',          days_of_week: '2,4,6' },
   { kid: 'Preston', title: '🛋️ Tidy living room',                                   frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
   { kid: 'Preston', title: '🐕 Feed and water dogs — 9am',                          frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
