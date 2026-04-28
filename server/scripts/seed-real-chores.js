@@ -94,9 +94,30 @@ if (missing.length) {
   process.exit(1);
 }
 
+// Match a saved completion to a new chore by (kid_id + title without
+// emoji prefix). Lets us preserve check-offs across re-seeds even if we
+// add/change emoji prefixes — a full title rewrite still loses the link.
+const stripPrefix = (title) => title.replace(/^[^A-Za-z0-9]+/, '').trim();
+
 const tx = db.transaction(() => {
-  console.log('[seed] Wiping existing chores and chore_completions...');
-  db.prepare('DELETE FROM chore_completions').run();
+  // 1. Snapshot existing completions BEFORE we wipe chores.
+  const savedCompletions = db.prepare(`
+    SELECT c.kid_id AS kid_id, c.title AS title,
+           cc.completed_date AS completed_date, cc.completed_at AS completed_at
+    FROM chore_completions cc
+    JOIN chores c ON c.id = cc.chore_id
+  `).all();
+
+  const savedByKey = new Map();
+  for (const r of savedCompletions) {
+    const key = `${r.kid_id}|${stripPrefix(r.title)}`;
+    if (!savedByKey.has(key)) savedByKey.set(key, []);
+    savedByKey.get(key).push({ completed_date: r.completed_date, completed_at: r.completed_at });
+  }
+  console.log(`[seed] Snapshotting ${savedCompletions.length} completion record(s) for preservation`);
+
+  // 2. Wipe chores. CASCADE deletes the completions; we'll restore matches below.
+  console.log('[seed] Wiping existing chores...');
   db.prepare('DELETE FROM chores').run();
 
   console.log('[seed] Setting laundry days...');
@@ -105,6 +126,8 @@ const tx = db.transaction(() => {
     updateLaundry.run(day, name);
   }
 
+  // 3. Insert fresh chores. For each one, restore matched completions.
+  //    For interval chores, only insert the anchor if no completion was preserved.
   console.log('[seed] Inserting chores...');
   const insertChore = db.prepare(
     `INSERT INTO chores (id, kid_id, title, points, frequency, days_of_week, active, sort_order, interval_days, notes)
@@ -116,11 +139,13 @@ const tx = db.transaction(() => {
   );
 
   let order = 0;
+  let restored = 0;
   for (const c of CHORES) {
     const id = nanoid();
+    const kid_id = byName.get(c.kid);
     insertChore.run(
       id,
-      byName.get(c.kid),
+      kid_id,
       c.title,
       0,                            // points shelved
       c.frequency,
@@ -130,19 +155,26 @@ const tx = db.transaction(() => {
       c.notes ?? null
     );
 
-    if (c.frequency === 'interval' && c.anchor_days_ago != null) {
+    const matchKey = `${kid_id}|${stripPrefix(c.title)}`;
+    const preserved = savedByKey.get(matchKey) || [];
+    for (const p of preserved) {
+      insertCompletion.run(nanoid(), id, p.completed_date, p.completed_at);
+      restored++;
+    }
+
+    if (c.frequency === 'interval' && c.anchor_days_ago != null && preserved.length === 0) {
       const anchorDate = dateMinusDays(c.anchor_days_ago);
-      insertCompletion.run(
-        nanoid(),
-        id,
-        anchorDate,
-        anchorDate + 'T12:00:00.000Z'
-      );
+      insertCompletion.run(nanoid(), id, anchorDate, anchorDate + 'T12:00:00.000Z');
       console.log(`  [interval-anchor] ${c.kid} — ${c.title} → anchored at ${anchorDate} (${c.anchor_days_ago}d ago, every ${c.interval_days}d)`);
+    } else if (c.frequency === 'interval' && preserved.length > 0) {
+      console.log(`  [interval — ${preserved.length} completion(s) preserved] ${c.kid} — ${c.title}`);
+    } else if (preserved.length > 0) {
+      console.log(`  [${c.frequency} — ${preserved.length} completion(s) preserved] ${c.kid} — ${c.title}`);
     } else {
       console.log(`  [${c.frequency}] ${c.kid} — ${c.title}`);
     }
   }
+  console.log(`[seed] Restored ${restored} completion record(s) onto the new chore IDs.`);
 });
 
 tx();
