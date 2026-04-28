@@ -1,9 +1,13 @@
 const BASE = '/api';
 
 async function req(path, opts = {}) {
+  // Spread opts FIRST, then overwrite headers with the merged version —
+  // otherwise opts.headers (e.g. {x-admin-pin}) would replace our merged
+  // object and drop Content-Type, which makes Express skip JSON parsing
+  // and return an empty req.body to the route.
   const res = await fetch(BASE + path, {
-    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
     ...opts,
+    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
