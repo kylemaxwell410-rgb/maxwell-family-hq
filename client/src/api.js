@@ -70,6 +70,14 @@ export const api = {
   updateKid: (pin, id, body) => req(`/admin/kids/${id}`, {
     method: 'PUT', headers: { 'x-admin-pin': pin }, body: JSON.stringify(body),
   }),
+  setChoreOverride: (pin, chore_id, override_date, kid_id) => req('/admin/chore-overrides', {
+    method: 'POST', headers: { 'x-admin-pin': pin },
+    body: JSON.stringify({ chore_id, override_date, kid_id }),
+  }),
+  clearChoreOverride: (pin, chore_id, override_date) => req('/admin/chore-overrides', {
+    method: 'DELETE', headers: { 'x-admin-pin': pin },
+    body: JSON.stringify({ chore_id, override_date }),
+  }),
 
   // settings
   settings: () => req('/settings'),

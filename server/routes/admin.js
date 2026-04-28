@@ -105,6 +105,46 @@ router.delete('/chores/:id', requirePin, (req, res) => {
   res.json({ ok: true });
 });
 
+// One-day chore reassignment (drag-and-drop). Doesn't change the underlying
+// kid_id; only the override_date returns the chore as the new kid's.
+router.post('/chore-overrides', requirePin, (req, res) => {
+  const { chore_id, override_date, kid_id } = req.body || {};
+  if (!chore_id || !override_date || !kid_id) {
+    return res.status(400).json({ error: 'chore_id, override_date, kid_id required' });
+  }
+  const chore = db.prepare('SELECT id, kid_id FROM chores WHERE id = ?').get(chore_id);
+  if (!chore) return res.status(404).json({ error: 'Chore not found' });
+  const kid = db.prepare('SELECT id FROM kids WHERE id = ?').get(kid_id);
+  if (!kid) return res.status(404).json({ error: 'Kid not found' });
+
+  // If the override target equals the chore's actual owner, clear any
+  // existing override (drag-back-to-original = remove the override).
+  if (chore.kid_id === kid_id) {
+    db.prepare('DELETE FROM chore_overrides WHERE chore_id = ? AND override_date = ?')
+      .run(chore_id, override_date);
+    return res.json({ ok: true, cleared: true });
+  }
+
+  // Upsert: replace any existing override for this chore on this date.
+  db.prepare('DELETE FROM chore_overrides WHERE chore_id = ? AND override_date = ?')
+    .run(chore_id, override_date);
+  db.prepare(
+    `INSERT INTO chore_overrides (id, chore_id, override_date, kid_id, created_at)
+     VALUES (?, ?, ?, ?, ?)`
+  ).run(nanoid(), chore_id, override_date, kid_id, new Date().toISOString());
+  res.json({ ok: true });
+});
+
+router.delete('/chore-overrides', requirePin, (req, res) => {
+  const { chore_id, override_date } = req.body || {};
+  if (!chore_id || !override_date) {
+    return res.status(400).json({ error: 'chore_id and override_date required' });
+  }
+  db.prepare('DELETE FROM chore_overrides WHERE chore_id = ? AND override_date = ?')
+    .run(chore_id, override_date);
+  res.json({ ok: true });
+});
+
 router.get('/chores', requirePin, (_req, res) => {
   const rows = db.prepare(`
     SELECT c.*, k.name AS kid_name, k.color AS kid_color

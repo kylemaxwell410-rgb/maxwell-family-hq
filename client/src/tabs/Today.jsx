@@ -6,6 +6,8 @@ import { upcomingMixed } from '../utils/upcoming.js';
 import { fmtTime, fmtDateShort, fmtDayOfWeek } from '../utils/format.js';
 import { factForToday } from '../utils/funFacts.js';
 import MiniGameCard from '../components/MiniGameCard.jsx';
+import QuickAddBar from '../components/QuickAddBar.jsx';
+import PinModal from '../components/PinModal.jsx';
 
 export default function Today({ kids: allKids, onKidsChange }) {
   const peopleForChores = useMemo(() => allKids.filter(k => k.role !== 'pet'), [allKids]);
@@ -81,6 +83,35 @@ export default function Today({ kids: allKids, onKidsChange }) {
     onKidsChange?.();
   }
 
+  // Quick-add chore from the Today tab. Mirrors the Chores-tab flow:
+  // PIN gate (cached in localStorage) → admin createChore → refetch.
+  const [pin, setPin] = useState(() => localStorage.getItem('admin_pin') || null);
+  const [pinPrompt, setPinPrompt] = useState(false);
+  const pendingAction = useRef(null);
+
+  async function addChore(kid_id, title) {
+    const t = (title || '').trim();
+    if (!t) return;
+    async function doIt(p) {
+      try {
+        await api.createChore(p, { kid_id, title: t });
+        await loadEverything();
+        onKidsChange?.();
+      } catch (err) {
+        if (/PIN/i.test(err.message)) {
+          localStorage.removeItem('admin_pin');
+          setPin(null);
+          pendingAction.current = (np) => doIt(np);
+          setPinPrompt(true);
+        } else {
+          alert(err.message);
+        }
+      }
+    }
+    if (pin) await doIt(pin);
+    else { pendingAction.current = doIt; setPinPrompt(true); }
+  }
+
   const choresByKid = useMemo(() => {
     const map = {};
     for (const k of peopleForChores) map[k.id] = [];
@@ -126,6 +157,7 @@ export default function Today({ kids: allKids, onKidsChange }) {
       />
 
       {/* Bottom: chores grid (the workhorse — fills remaining space on the wall) */}
+      <QuickAddBar kids={peopleForChores} onAdd={addChore} />
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 lg:flex-1 lg:min-h-0">
         {peopleForChores.map(kid => (
           <PersonChoresTile
@@ -137,6 +169,19 @@ export default function Today({ kids: allKids, onKidsChange }) {
           />
         ))}
       </div>
+      {pinPrompt && (
+        <PinModal
+          onVerified={(p) => {
+            setPin(p);
+            localStorage.setItem('admin_pin', p);
+            setPinPrompt(false);
+            const fn = pendingAction.current;
+            pendingAction.current = null;
+            if (fn) fn(p);
+          }}
+          onCancel={() => { pendingAction.current = null; setPinPrompt(false); }}
+        />
+      )}
     </div>
   );
 }

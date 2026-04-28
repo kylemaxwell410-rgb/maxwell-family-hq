@@ -1,24 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  DndContext,
+  MouseSensor,
+  TouchSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  DragOverlay,
+} from '@dnd-kit/core';
 import { api, todayStr } from '../api.js';
 import PinModal from '../components/PinModal.jsx';
+import EditModeButton from '../components/EditModeButton.jsx';
+import QuickAddBar from '../components/QuickAddBar.jsx';
+import { useEditMode } from '../hooks/useEditMode.js';
 
 const FAVORITE_CHORES = ['Make bed', 'Homework', 'Tidy room', 'Feed pets'];
-
-function parseQuickAdd(text, kids) {
-  const t = text.trim();
-  if (!t) return null;
-  const sep = /[:\s]+/;
-  const idx = t.search(sep);
-  if (idx <= 0) return null;
-  const name = t.slice(0, idx).replace(/[:\s]+$/, '').toLowerCase();
-  const title = t.slice(idx).replace(/^[:\s]+/, '').trim();
-  if (!title) return null;
-  const kid = kids.find(k => {
-    const n = k.name.toLowerCase();
-    return n === name || n.startsWith(name) || name.startsWith(n);
-  });
-  return kid ? { kid_id: kid.id, kid_name: kid.name, title } : null;
-}
 
 function startOfDay(d) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
 function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
@@ -39,6 +36,36 @@ export default function Chores({ kids: allKids, onKidsChange }) {
   const [pinPrompt, setPinPrompt] = useState(false);
   const pendingAction = useRef(null);
   const [notesChore, setNotesChore] = useState(null);
+
+  const editMode = useEditMode();
+  const [activeDragChore, setActiveDragChore] = useState(null);
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
+  );
+
+  function handleDragStart(event) {
+    const id = event.active.id;
+    setActiveDragChore(chores.find(c => c.id === id) || null);
+  }
+
+  async function handleDragEnd(event) {
+    setActiveDragChore(null);
+    const { active, over } = event;
+    if (!over) return;
+    const choreId = String(active.id);
+    const targetKidId = String(over.id);
+    const chore = chores.find(c => c.id === choreId);
+    if (!chore || chore.kid_id === targetKidId) return;
+    if (!editMode.pin) return;
+    try {
+      await api.setChoreOverride(editMode.pin, choreId, date, targetKidId);
+      await loadAll();
+    } catch (err) {
+      alert('Could not move chore: ' + err.message);
+    }
+  }
 
   function withPin(action) {
     if (pin) return action(pin);
@@ -123,125 +150,59 @@ export default function Chores({ kids: allKids, onKidsChange }) {
 
   return (
     <div className="overflow-auto p-3 lg:p-5 lg:h-full">
-      <QuickAddBar kids={kids} onAdd={addChore} />
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 lg:h-full">
-        {kids.map(kid => {
-          const list = byKid[kid.id] || [];
-          const done = list.filter(c => c.completed).length;
-          const total = list.length;
-          const earnedPoints = list.filter(c => c.completed).reduce((s, c) => s + c.points, 0);
-          const possiblePoints = list.reduce((s, c) => s + c.points, 0);
-          const allDone = total > 0 && done === total;
-          const personalEvents = [
-            ...(eventsByPerson[kid.id] || []),
-            ...eventsByPerson._family,
-          ].sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime));
-          const isParent = kid.role === 'parent';
-
-          return (
-            <div key={kid.id}
-              className={`flex flex-col rounded-2xl border overflow-hidden transition
-                ${allDone ? 'border-slate-300' : 'border-slate-200'}
-                bg-white`}
-              style={{ boxShadow: `inset 0 3px 0 0 ${kid.color}` }}>
-              {/* Header */}
-              <div className="px-4 pt-3 pb-2 flex items-center justify-between"
-                style={{ background: `linear-gradient(180deg, ${kid.color}33 0%, transparent 100%)` }}>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white"
-                    style={{ background: kid.color }}>
-                    {kid.initials}
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold leading-tight">{kid.name}</div>
-                    <div className="text-[11px] text-slate-500 leading-tight">
-                      {total === 0 ? 'No chores today' : `${done}/${total} done${isParent ? '' : ` · ${earnedPoints}/${possiblePoints} pts`}`}
-                    </div>
-                  </div>
-                </div>
-                {!isParent && (
-                  <div className="text-right">
-                    <div className="text-[10px] text-slate-500 uppercase tracking-wide leading-none">Balance</div>
-                    <div className="text-2xl font-bold tabular-nums leading-tight">{kid.points_balance}</div>
-                  </div>
-                )}
-              </div>
-
-              {/* Body: either the chore list OR the free-time panel */}
-              <div className="flex-1 p-3 overflow-auto">
-                {allDone ? (
-                  <FreeTimeCard person={kid} events={personalEvents} />
-                ) : list.length === 0 ? (
-                  <>
-                    <PerKidAdd kid={kid} onAdd={addChore} />
-                    <div className="text-slate-500 text-center py-6 text-sm">
-                      No chores scheduled today
-                    </div>
-                  </>
-                ) : (
-                  <div className="space-y-1.5">
-                    <PerKidAdd kid={kid} onAdd={addChore} />
-                    {list.map(c => (
-                      <div
-                        key={c.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => toggle(c)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(c); } }}
-                        className={`w-full flex items-center gap-2.5 p-2.5 rounded-xl transition tap text-left cursor-pointer
-                          ${c.completed
-                            ? 'bg-slate-100 text-slate-500 line-through'
-                            : 'bg-slate-100 hover:bg-slate-200'}`}
-                      >
-                        <div className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center flex-shrink-0
-                          ${c.completed ? 'border-transparent' : 'border-slate-300'}`}
-                          style={c.completed ? { background: kid.color } : {}}>
-                          {c.completed && (
-                            <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="white" strokeWidth="3">
-                              <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[15px] font-bold truncate uppercase tracking-wide">{c.title}</div>
-                        </div>
-                        {c.notes && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setNotesChore(c); }}
-                            className="w-7 h-7 rounded-full bg-white border border-slate-300 text-slate-600 flex items-center justify-center text-sm font-bold tap flex-shrink-0"
-                            aria-label="View details"
-                          >
-                            i
-                          </button>
-                        )}
-                        {c.overdue_days > 0 && !c.completed && (
-                          <div className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-600 whitespace-nowrap">
-                            Overdue {c.overdue_days}d
-                          </div>
-                        )}
-                        {!isParent && c.points > 0 && (
-                          <div className="text-xs font-semibold px-2 py-0.5 rounded-md"
-                            style={{ background: kid.color + '22', color: c.completed ? '#94a3b8' : kid.color }}>
-                            +{c.points}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {/* Laundry-day footer: shows on the kid's assigned weekday
-                  regardless of whether they have chores or are all-done.
-                  flex-shrink-0 so a tall chore list can't squeeze it out. */}
-              {kid.laundry_day != null && new Date().getDay() === kid.laundry_day && (
-                <div className="px-3 pb-3 flex-shrink-0">
-                  <LaundryDayTile color={kid.color} />
-                </div>
-              )}
-            </div>
-          );
-        })}
+      <div className="flex items-start gap-2 mb-3 lg:hidden">
+        <div className="flex-1 min-w-0">
+          <QuickAddBar kids={kids} onAdd={addChore} />
+        </div>
+        <EditModeButton
+          unlocked={editMode.unlocked}
+          secondsLeft={editMode.secondsLeft}
+          onUnlock={editMode.unlock}
+          onLock={editMode.lock}
+        />
       </div>
+      <div className="hidden lg:flex justify-end mb-2">
+        <EditModeButton
+          unlocked={editMode.unlocked}
+          secondsLeft={editMode.secondsLeft}
+          onUnlock={editMode.unlock}
+          onLock={editMode.lock}
+        />
+      </div>
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 lg:h-full">
+          {kids.map(kid => {
+            const list = byKid[kid.id] || [];
+            const personalEvents = [
+              ...(eventsByPerson[kid.id] || []),
+              ...eventsByPerson._family,
+            ].sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime));
+            return (
+              <KidColumn
+                key={kid.id}
+                kid={kid}
+                list={list}
+                personalEvents={personalEvents}
+                editMode={editMode}
+                onAddChore={addChore}
+                onToggle={toggle}
+                onShowNotes={setNotesChore}
+              />
+            );
+          })}
+        </div>
+        <DragOverlay>
+          {activeDragChore ? (
+            <div className="px-2.5 py-2 rounded-xl bg-white border-2 border-emerald-500 shadow-xl text-[15px] font-bold uppercase tracking-wide max-w-[260px] truncate">
+              {activeDragChore.title}
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
       {pinPrompt && (
         <PinModal
           onVerified={(p) => {
@@ -261,6 +222,151 @@ export default function Chores({ kids: allKids, onKidsChange }) {
           color={kids.find(k => k.id === notesChore.kid_id)?.color || '#94a3b8'}
           onClose={() => setNotesChore(null)}
         />
+      )}
+    </div>
+  );
+}
+
+function KidColumn({ kid, list, personalEvents, editMode, onAddChore, onToggle, onShowNotes }) {
+  const { setNodeRef, isOver } = useDroppable({ id: kid.id });
+  const done  = list.filter(c => c.completed).length;
+  const total = list.length;
+  const earnedPoints   = list.filter(c => c.completed).reduce((s, c) => s + c.points, 0);
+  const possiblePoints = list.reduce((s, c) => s + c.points, 0);
+  const allDone = total > 0 && done === total;
+  const isParent = kid.role === 'parent';
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex flex-col rounded-2xl border overflow-hidden transition
+        ${allDone ? 'border-slate-300' : 'border-slate-200'}
+        ${editMode.unlocked && isOver ? 'ring-4 ring-emerald-400' : ''}
+        bg-white`}
+      style={{ boxShadow: `inset 0 3px 0 0 ${kid.color}` }}
+    >
+      <div className="px-4 pt-3 pb-2 flex items-center justify-between"
+        style={{ background: `linear-gradient(180deg, ${kid.color}33 0%, transparent 100%)` }}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white"
+            style={{ background: kid.color }}>
+            {kid.initials}
+          </div>
+          <div>
+            <div className="text-lg font-bold leading-tight">{kid.name}</div>
+            <div className="text-[11px] text-slate-500 leading-tight">
+              {total === 0 ? 'No chores today' : `${done}/${total} done${isParent ? '' : ` · ${earnedPoints}/${possiblePoints} pts`}`}
+            </div>
+          </div>
+        </div>
+        {!isParent && (
+          <div className="text-right">
+            <div className="text-[10px] text-slate-500 uppercase tracking-wide leading-none">Balance</div>
+            <div className="text-2xl font-bold tabular-nums leading-tight">{kid.points_balance}</div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 p-3 overflow-auto">
+        {allDone ? (
+          <FreeTimeCard person={kid} events={personalEvents} />
+        ) : list.length === 0 ? (
+          <>
+            <PerKidAdd kid={kid} onAdd={onAddChore} />
+            <div className="text-slate-500 text-center py-6 text-sm">
+              No chores scheduled today
+            </div>
+          </>
+        ) : (
+          <div className="space-y-1.5">
+            <PerKidAdd kid={kid} onAdd={onAddChore} />
+            {list.map(c => (
+              <ChoreItem
+                key={c.id}
+                chore={c}
+                kid={kid}
+                isParent={isParent}
+                editMode={editMode}
+                onToggle={onToggle}
+                onShowNotes={onShowNotes}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      {kid.laundry_day != null && new Date().getDay() === kid.laundry_day && (
+        <div className="px-3 pb-3 flex-shrink-0">
+          <LaundryDayTile color={kid.color} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChoreItem({ chore, kid, isParent, editMode, onToggle, onShowNotes }) {
+  const draggable = editMode.unlocked;
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: chore.id,
+    disabled: !draggable,
+  });
+  const style = transform
+    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, opacity: isDragging ? 0.4 : 1, touchAction: 'none' }
+    : { touchAction: draggable ? 'none' : undefined };
+
+  function handleClick(e) {
+    if (draggable) return; // dragging interferes — don't toggle in edit mode
+    onToggle(chore);
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      role="button"
+      tabIndex={0}
+      onClick={handleClick}
+      onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !draggable) { e.preventDefault(); onToggle(chore); } }}
+      {...(draggable ? { ...listeners, ...attributes } : {})}
+      className={`w-full flex items-center gap-2.5 p-2.5 rounded-xl transition tap text-left cursor-pointer
+        ${draggable ? 'ring-2 ring-emerald-400/60' : ''}
+        ${chore.completed
+          ? 'bg-slate-100 text-slate-500 line-through'
+          : 'bg-slate-100 hover:bg-slate-200'}`}
+    >
+      <div className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center flex-shrink-0
+        ${chore.completed ? 'border-transparent' : 'border-slate-300'}`}
+        style={chore.completed ? { background: kid.color } : {}}>
+        {chore.completed && (
+          <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="white" strokeWidth="3">
+            <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[15px] font-bold truncate uppercase tracking-wide">{chore.title}</div>
+        {chore.is_overridden && (
+          <div className="text-[9px] text-emerald-700 font-semibold uppercase tracking-wider">moved today</div>
+        )}
+      </div>
+      {chore.notes && !draggable && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onShowNotes(chore); }}
+          className="w-7 h-7 rounded-full bg-white border border-slate-300 text-slate-600 flex items-center justify-center text-sm font-bold tap flex-shrink-0"
+          aria-label="View details"
+        >
+          i
+        </button>
+      )}
+      {chore.overdue_days > 0 && !chore.completed && (
+        <div className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-600 whitespace-nowrap">
+          Overdue {chore.overdue_days}d
+        </div>
+      )}
+      {!isParent && chore.points > 0 && (
+        <div className="text-xs font-semibold px-2 py-0.5 rounded-md"
+          style={{ background: kid.color + '22', color: chore.completed ? '#94a3b8' : kid.color }}>
+          +{chore.points}
+        </div>
       )}
     </div>
   );
@@ -287,48 +393,6 @@ function ChoreNotesModal({ chore, color, onClose }) {
         </button>
       </div>
     </div>
-  );
-}
-
-function QuickAddBar({ kids, onAdd }) {
-  const [text, setText] = useState('');
-  const [err, setErr] = useState('');
-  const [hint, setHint] = useState('');
-
-  function submit(e) {
-    e.preventDefault();
-    const parsed = parseQuickAdd(text, kids);
-    if (!parsed) {
-      const example = kids[0]?.name || 'Kolt';
-      setErr(`Try "${example}: clean room"`);
-      return;
-    }
-    onAdd(parsed.kid_id, parsed.title);
-    setHint(`Added "${parsed.title}" for ${parsed.kid_name}`);
-    setText('');
-    setErr('');
-    setTimeout(() => setHint(''), 2500);
-  }
-
-  return (
-    <form onSubmit={submit} className="lg:hidden mb-3 flex flex-col gap-1">
-      <div className="flex gap-2">
-        <input
-          value={text}
-          onChange={(e) => { setText(e.target.value); setErr(''); }}
-          placeholder='Quick add — e.g. "Kolt: clean room"'
-          className="flex-1 px-3 py-2.5 rounded-xl bg-white border border-slate-300 text-[15px] focus:outline-none focus:border-slate-500"
-        />
-        <button
-          type="submit"
-          className="px-4 py-2.5 rounded-xl bg-slate-900 text-white font-semibold tap"
-        >
-          Add
-        </button>
-      </div>
-      {err   && <div className="text-xs text-rose-600 px-1">{err}</div>}
-      {hint  && <div className="text-xs text-emerald-600 px-1">{hint}</div>}
-    </form>
   );
 }
 

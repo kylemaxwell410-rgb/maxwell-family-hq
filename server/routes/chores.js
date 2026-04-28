@@ -27,6 +27,26 @@ router.get('/', (req, res) => {
     ORDER BY k.sort_order, c.sort_order
   `).all();
 
+  // One-day overrides: tweak chore.kid_id/kid_name/kid_color/kid_initials for
+  // chores that were drag-and-dropped onto a different kid for today only.
+  const overrides = db.prepare(`
+    SELECT o.chore_id, k.id AS kid_id, k.name AS kid_name, k.color AS kid_color,
+           k.initials AS kid_initials, k.sort_order AS kid_sort_order
+    FROM chore_overrides o JOIN kids k ON k.id = o.kid_id
+    WHERE o.override_date = ?
+  `).all(date);
+  const overrideMap = new Map(overrides.map(o => [o.chore_id, o]));
+  for (const c of chores) {
+    const ov = overrideMap.get(c.id);
+    if (ov) {
+      c.kid_id = ov.kid_id;
+      c.kid_name = ov.kid_name;
+      c.kid_color = ov.kid_color;
+      c.kid_initials = ov.kid_initials;
+      c.is_overridden = 1;
+    }
+  }
+
   const completions = db.prepare(
     'SELECT chore_id, completed_at FROM chore_completions WHERE completed_date = ?'
   ).all(date);

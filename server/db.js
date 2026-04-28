@@ -109,8 +109,18 @@ export function initSchema() {
       created_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS chore_overrides (
+      id TEXT PRIMARY KEY,
+      chore_id TEXT NOT NULL REFERENCES chores(id) ON DELETE CASCADE,
+      override_date TEXT NOT NULL,
+      kid_id TEXT NOT NULL REFERENCES kids(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL,
+      UNIQUE(chore_id, override_date)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_chores_kid ON chores(kid_id);
     CREATE INDEX IF NOT EXISTS idx_completions_date ON chore_completions(completed_date);
+    CREATE INDEX IF NOT EXISTS idx_overrides_date ON chore_overrides(override_date);
     CREATE INDEX IF NOT EXISTS idx_events_start ON events(start_datetime);
     CREATE INDEX IF NOT EXISTS idx_meals_date ON meals(meal_date);
     CREATE INDEX IF NOT EXISTS idx_txn_kid ON point_transactions(kid_id);
