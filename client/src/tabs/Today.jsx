@@ -100,7 +100,7 @@ export default function Today({ kids: allKids, onKidsChange }) {
   }, [vacations]);
 
   return (
-    <div className="flex flex-col gap-3 p-3 lg:h-full lg:overflow-hidden">
+    <div className="flex flex-col gap-3 p-3 lg:h-full">
       {notes.length > 0 && <NotesStrip notes={notes} />}
       <FunFactStrip fact={fact} />
 

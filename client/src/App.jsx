@@ -54,7 +54,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen w-screen flex flex-col bg-slate-100 text-slate-900 lg:h-screen lg:overflow-hidden">
+    <div className="min-h-screen w-screen flex flex-col bg-slate-100 text-slate-900 lg:h-screen">
       <div className="bg-white border-b border-slate-200 flex items-stretch">
         <div className="flex-1 min-w-0 flex flex-col">
           <Header bare />
@@ -66,7 +66,7 @@ export default function App() {
           <ActionPill kind="ask"   onClick={() => setAskOpen(true)} />
         </div>
       </div>
-      <main className="flex-1 lg:overflow-hidden">
+      <main className="flex-1">
         {tab === 'today'    && <Today    key={dateKey} kids={kids} onKidsChange={loadKids} />}
         {tab === 'chores'   && <Chores   key={dateKey} kids={kids} onKidsChange={loadKids} />}
         {tab === 'calendar' && <Calendar key={dateKey} kids={kids} />}
