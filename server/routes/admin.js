@@ -145,6 +145,34 @@ router.delete('/chore-overrides', requirePin, (req, res) => {
   res.json({ ok: true });
 });
 
+// Skip a chore for one specific day (the kid_id stays the same; the chore
+// just doesn't appear in today's list and reappears tomorrow on schedule).
+router.post('/chore-skips', requirePin, (req, res) => {
+  const { chore_id, skip_date } = req.body || {};
+  if (!chore_id || !skip_date) {
+    return res.status(400).json({ error: 'chore_id and skip_date required' });
+  }
+  const chore = db.prepare('SELECT id FROM chores WHERE id = ?').get(chore_id);
+  if (!chore) return res.status(404).json({ error: 'Chore not found' });
+  // Upsert: replace any existing skip for this chore on this date.
+  db.prepare('DELETE FROM chore_skips WHERE chore_id = ? AND skip_date = ?')
+    .run(chore_id, skip_date);
+  db.prepare(
+    `INSERT INTO chore_skips (id, chore_id, skip_date, created_at) VALUES (?, ?, ?, ?)`
+  ).run(nanoid(), chore_id, skip_date, new Date().toISOString());
+  res.json({ ok: true });
+});
+
+router.delete('/chore-skips', requirePin, (req, res) => {
+  const { chore_id, skip_date } = req.body || {};
+  if (!chore_id || !skip_date) {
+    return res.status(400).json({ error: 'chore_id and skip_date required' });
+  }
+  db.prepare('DELETE FROM chore_skips WHERE chore_id = ? AND skip_date = ?')
+    .run(chore_id, skip_date);
+  res.json({ ok: true });
+});
+
 router.get('/chores', requirePin, (_req, res) => {
   const rows = db.prepare(`
     SELECT c.*, k.name AS kid_name, k.color AS kid_color

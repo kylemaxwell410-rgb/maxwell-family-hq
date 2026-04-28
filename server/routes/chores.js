@@ -47,6 +47,12 @@ router.get('/', (req, res) => {
     }
   }
 
+  // One-day skips: chores explicitly removed from today by the parent.
+  const skippedRows = db.prepare(
+    'SELECT chore_id FROM chore_skips WHERE skip_date = ?'
+  ).all(date);
+  const skippedSet = new Set(skippedRows.map(r => r.chore_id));
+
   const completions = db.prepare(
     'SELECT chore_id, completed_at FROM chore_completions WHERE completed_date = ?'
   ).all(date);
@@ -120,6 +126,7 @@ router.get('/', (req, res) => {
     }
 
     if (!include) continue;
+    if (skippedSet.has(c.id)) continue; // parent skipped this one for today
     withStatus.push({
       ...c,
       completed,

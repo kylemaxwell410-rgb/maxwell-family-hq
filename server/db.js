@@ -118,6 +118,14 @@ export function initSchema() {
       UNIQUE(chore_id, override_date)
     );
 
+    CREATE TABLE IF NOT EXISTS chore_skips (
+      id TEXT PRIMARY KEY,
+      chore_id TEXT NOT NULL REFERENCES chores(id) ON DELETE CASCADE,
+      skip_date TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      UNIQUE(chore_id, skip_date)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_chores_kid ON chores(kid_id);
     CREATE INDEX IF NOT EXISTS idx_completions_date ON chore_completions(completed_date);
     CREATE INDEX IF NOT EXISTS idx_overrides_date ON chore_overrides(override_date);

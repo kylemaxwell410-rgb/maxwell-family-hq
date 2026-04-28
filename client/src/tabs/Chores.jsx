@@ -67,6 +67,17 @@ export default function Chores({ kids: allKids, onKidsChange }) {
     }
   }
 
+  async function skipChoreToday(chore) {
+    if (!editMode.pin) return;
+    if (!confirm(`Remove "${chore.title}" from today's list?\n\nIt will come back tomorrow on its normal schedule.`)) return;
+    try {
+      await api.skipChore(editMode.pin, chore.id, date);
+      await loadAll();
+    } catch (err) {
+      alert('Could not skip chore: ' + err.message);
+    }
+  }
+
   function withPin(action) {
     if (pin) return action(pin);
     pendingAction.current = action;
@@ -191,6 +202,7 @@ export default function Chores({ kids: allKids, onKidsChange }) {
                 onAddChore={addChore}
                 onToggle={toggle}
                 onShowNotes={setNotesChore}
+                onSkipToday={skipChoreToday}
               />
             );
           })}
@@ -227,7 +239,7 @@ export default function Chores({ kids: allKids, onKidsChange }) {
   );
 }
 
-function KidColumn({ kid, list, personalEvents, editMode, onAddChore, onToggle, onShowNotes }) {
+function KidColumn({ kid, list, personalEvents, editMode, onAddChore, onToggle, onShowNotes, onSkipToday }) {
   const { setNodeRef, isOver } = useDroppable({ id: kid.id });
   const done  = list.filter(c => c.completed).length;
   const total = list.length;
@@ -289,6 +301,7 @@ function KidColumn({ kid, list, personalEvents, editMode, onAddChore, onToggle, 
                 editMode={editMode}
                 onToggle={onToggle}
                 onShowNotes={onShowNotes}
+                onSkipToday={onSkipToday}
               />
             ))}
           </div>
@@ -303,7 +316,7 @@ function KidColumn({ kid, list, personalEvents, editMode, onAddChore, onToggle, 
   );
 }
 
-function ChoreItem({ chore, kid, isParent, editMode, onToggle, onShowNotes }) {
+function ChoreItem({ chore, kid, isParent, editMode, onToggle, onShowNotes, onSkipToday }) {
   const draggable = editMode.unlocked;
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: chore.id,
@@ -355,6 +368,17 @@ function ChoreItem({ chore, kid, isParent, editMode, onToggle, onShowNotes }) {
           aria-label="View details"
         >
           i
+        </button>
+      )}
+      {draggable && (
+        <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); onSkipToday(chore); }}
+          className="w-7 h-7 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-700 flex items-center justify-center text-sm font-bold tap flex-shrink-0"
+          aria-label="Skip for today"
+          title="Remove from today's list (returns tomorrow)"
+        >
+          ×
         </button>
       )}
       {chore.overdue_days > 0 && !chore.completed && (

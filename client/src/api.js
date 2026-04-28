@@ -82,6 +82,14 @@ export const api = {
     method: 'DELETE', headers: { 'x-admin-pin': pin },
     body: JSON.stringify({ chore_id, override_date }),
   }),
+  skipChore: (pin, chore_id, skip_date) => req('/admin/chore-skips', {
+    method: 'POST', headers: { 'x-admin-pin': pin },
+    body: JSON.stringify({ chore_id, skip_date }),
+  }),
+  unskipChore: (pin, chore_id, skip_date) => req('/admin/chore-skips', {
+    method: 'DELETE', headers: { 'x-admin-pin': pin },
+    body: JSON.stringify({ chore_id, skip_date }),
+  }),
 
   // settings
   settings: () => req('/settings'),
