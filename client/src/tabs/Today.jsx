@@ -430,6 +430,24 @@ function PersonChoresTile({ kid, chores, onToggle, streak = 0 }) {
           </button>
         ))}
       </div>
+      {/* Laundry-day footer — same treatment as Chores tab. Pinned with
+          flex-shrink-0 so it can't be squeezed out by a tall chore list. */}
+      {kid.laundry_day != null && new Date().getDay() === kid.laundry_day && (
+        <div className="px-2 pb-2 flex-shrink-0">
+          <LaundryDayTile color={kid.color} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LaundryDayTile({ color }) {
+  return (
+    <div
+      className="w-full px-2 py-2 rounded-lg text-center font-bold uppercase tracking-wide text-white text-xs"
+      style={{ background: color }}
+    >
+      <span className="emoji mr-1">🧺</span>Laundry Day
     </div>
   );
 }

@@ -231,9 +231,10 @@ export default function Chores({ kids: allKids, onKidsChange }) {
                 )}
               </div>
               {/* Laundry-day footer: shows on the kid's assigned weekday
-                  regardless of whether they have chores or are all-done. */}
+                  regardless of whether they have chores or are all-done.
+                  flex-shrink-0 so a tall chore list can't squeeze it out. */}
               {kid.laundry_day != null && new Date().getDay() === kid.laundry_day && (
-                <div className="px-3 pb-3">
+                <div className="px-3 pb-3 flex-shrink-0">
                   <LaundryDayTile color={kid.color} />
                 </div>
               )}
@@ -402,10 +403,10 @@ function PerKidAdd({ kid, onAdd }) {
 function LaundryDayTile({ color }) {
   return (
     <div
-      className="w-full px-3 py-2 rounded-xl text-center font-bold uppercase tracking-wide text-white text-sm"
+      className="w-full px-3 py-3 rounded-xl text-center font-bold uppercase tracking-wide text-white text-base"
       style={{ background: color }}
     >
-      🧺 Laundry Day
+      <span className="emoji mr-1">🧺</span>Laundry Day
     </div>
   );
 }
