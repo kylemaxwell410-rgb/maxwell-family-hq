@@ -39,6 +39,7 @@ export default function Chores({ kids: allKids, onKidsChange }) {
 
   const editMode = useEditMode();
   const [activeDragChore, setActiveDragChore] = useState(null);
+  const [editingChore, setEditingChore] = useState(null);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -75,6 +76,20 @@ export default function Chores({ kids: allKids, onKidsChange }) {
       await loadAll();
     } catch (err) {
       alert('Could not skip chore: ' + err.message);
+    }
+  }
+
+  async function saveEditedChore(updated) {
+    if (!editMode.pin) return;
+    try {
+      await api.updateChore(editMode.pin, updated.id, {
+        title: updated.title,
+        notes: updated.notes,
+      });
+      setEditingChore(null);
+      await loadAll();
+    } catch (err) {
+      alert('Could not save: ' + err.message);
     }
   }
 
@@ -205,6 +220,7 @@ export default function Chores({ kids: allKids, onKidsChange }) {
                 onToggle={toggle}
                 onShowNotes={setNotesChore}
                 onSkipToday={skipChoreToday}
+                onEditChore={setEditingChore}
               />
             );
           })}
@@ -237,11 +253,19 @@ export default function Chores({ kids: allKids, onKidsChange }) {
           onClose={() => setNotesChore(null)}
         />
       )}
+      {editingChore && (
+        <ChoreEditModal
+          chore={editingChore}
+          color={kids.find(k => k.id === editingChore.kid_id)?.color || '#94a3b8'}
+          onSave={saveEditedChore}
+          onClose={() => setEditingChore(null)}
+        />
+      )}
     </div>
   );
 }
 
-function KidColumn({ kid, list, personalEvents, editMode, onAddChore, onToggle, onShowNotes, onSkipToday }) {
+function KidColumn({ kid, list, personalEvents, editMode, onAddChore, onToggle, onShowNotes, onSkipToday, onEditChore }) {
   const { setNodeRef, isOver } = useDroppable({ id: kid.id });
   const done  = list.filter(c => c.completed).length;
   const total = list.length;
@@ -304,6 +328,7 @@ function KidColumn({ kid, list, personalEvents, editMode, onAddChore, onToggle, 
                 onToggle={onToggle}
                 onShowNotes={onShowNotes}
                 onSkipToday={onSkipToday}
+                onEditChore={onEditChore}
               />
             ))}
           </div>
@@ -318,7 +343,7 @@ function KidColumn({ kid, list, personalEvents, editMode, onAddChore, onToggle, 
   );
 }
 
-function ChoreItem({ chore, kid, isParent, editMode, onToggle, onShowNotes, onSkipToday }) {
+function ChoreItem({ chore, kid, isParent, editMode, onToggle, onShowNotes, onSkipToday, onEditChore }) {
   const draggable = editMode.unlocked;
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: chore.id,
@@ -329,7 +354,12 @@ function ChoreItem({ chore, kid, isParent, editMode, onToggle, onShowNotes, onSk
     : { touchAction: draggable ? 'none' : undefined };
 
   function handleClick(e) {
-    if (draggable) return; // dragging interferes — don't toggle in edit mode
+    // In edit mode: tap (without drag motion) opens the editor.
+    // Outside edit mode: tap toggles done.
+    if (draggable) {
+      if (!isDragging) onEditChore(chore);
+      return;
+    }
     onToggle(chore);
   }
 
@@ -394,6 +424,69 @@ function ChoreItem({ chore, kid, isParent, editMode, onToggle, onShowNotes, onSk
           +{chore.points}
         </div>
       )}
+    </div>
+  );
+}
+
+function ChoreEditModal({ chore, color, onSave, onClose }) {
+  const [title, setTitle] = useState(chore.title);
+  const [notes, setNotes] = useState(chore.notes || '');
+  const [saving, setSaving] = useState(false);
+
+  async function submit(e) {
+    e.preventDefault();
+    if (!title.trim()) return;
+    setSaving(true);
+    try {
+      await onSave({ ...chore, title: title.trim(), notes: notes.trim() || null });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
+    >
+      <form
+        onClick={(e) => e.stopPropagation()}
+        onSubmit={submit}
+        className="bg-white rounded-2xl p-5 max-w-sm w-full"
+        style={{ borderTop: `5px solid ${color}` }}
+      >
+        <h3 className="text-lg font-bold uppercase tracking-wide mb-3">Edit chore</h3>
+        <label className="block text-xs uppercase tracking-wide text-slate-500 font-semibold mb-1">Title</label>
+        <input
+          autoFocus
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-300 text-[15px] focus:outline-none focus:border-slate-500 mb-3"
+        />
+        <label className="block text-xs uppercase tracking-wide text-slate-500 font-semibold mb-1">Notes (tap-to-view detail)</label>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Optional details, like '3 cans (hallway + ranger). Install fresh bags.'"
+          className="w-full min-h-[80px] px-3 py-2.5 rounded-xl bg-white border border-slate-300 text-[15px] focus:outline-none focus:border-slate-500 mb-4"
+        />
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={saving || !title.trim()}
+            className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-300 text-white font-semibold tap"
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold tap"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
