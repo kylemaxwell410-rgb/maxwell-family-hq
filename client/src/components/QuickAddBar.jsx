@@ -41,7 +41,7 @@ export default function QuickAddBar({ kids, onAdd }) {
   }
 
   return (
-    <form onSubmit={submit} className="lg:hidden mb-3 flex flex-col gap-1">
+    <form onSubmit={submit} className="hide-on-kiosk mb-3 flex flex-col gap-1">
       <div className="flex gap-2">
         <input
           value={text}

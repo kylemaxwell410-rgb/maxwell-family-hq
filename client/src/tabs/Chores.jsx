@@ -161,7 +161,9 @@ export default function Chores({ kids: allKids, onKidsChange }) {
 
   return (
     <div className="overflow-auto p-3 lg:p-5 lg:h-full">
-      <div className="flex items-start gap-2 mb-3 lg:hidden">
+      {/* Quick-add bar + edit button — visible everywhere except the Pi
+          kiosk wall (which gets only the edit button, top-right). */}
+      <div className="flex items-start gap-2 mb-3 hide-on-kiosk">
         <div className="flex-1 min-w-0">
           <QuickAddBar kids={kids} onAdd={addChore} />
         </div>
@@ -172,7 +174,7 @@ export default function Chores({ kids: allKids, onKidsChange }) {
           onLock={editMode.lock}
         />
       </div>
-      <div className="hidden lg:flex justify-end mb-2">
+      <div className="show-on-kiosk-only justify-end mb-2">
         <EditModeButton
           unlocked={editMode.unlocked}
           secondsLeft={editMode.secondsLeft}

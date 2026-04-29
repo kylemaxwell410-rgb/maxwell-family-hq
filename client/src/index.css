@@ -25,6 +25,13 @@ html.kiosk * { cursor: none !important; }
   html, body, #root { overflow-x: hidden; }
 }
 
+/* Visibility helpers for kiosk vs non-kiosk. Use these instead of lg:hidden
+   when you want a control hidden only on the wall display (kids walking by
+   shouldn't get parent-only UI), but still visible on a Mac/laptop. */
+html.kiosk .hide-on-kiosk     { display: none !important; }
+.show-on-kiosk-only           { display: none; }
+html.kiosk .show-on-kiosk-only { display: flex !important; }
+
 * {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
