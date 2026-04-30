@@ -47,34 +47,36 @@ const CHORES = [
   { kid: 'Kolt', title: '🗑️ Take out trash bags', frequency: 'weekly', days_of_week: '0',
     notes: '3 cans (hallway + ranger). Install fresh bags after.' },
   { kid: 'Kolt', title: '📦 Take out boxes (hallway + ranger)',                    frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
-  { kid: 'Kolt', title: '🐾 Feed animals — 8am',                                    frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Kolt', title: '🐾 8am — Feed animals',                                    frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Kolt', title: '🦆 9am — Feed ducks',                                      frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
   { kid: 'Kolt', title: '🐱 Feed and water cats',                                   frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Kolt', title: '🐱 7pm — Wet food for cats',                               frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
   { kid: 'Kolt', title: '🌿 Cut grass',                                             frequency: 'weekly_rolling',  days_of_week: '0' },
 
   // MICHAEL-ANN
-  { kid: 'Michael-ann', title: '🍽️ Dishes (load + wash) — 12pm',                    frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
-  { kid: 'Michael-ann', title: '🍽️ Dishes (load + wash) — 7pm',                     frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Michael-ann', title: '🍽️ 9am — Dishes (load + wash)',                    frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Michael-ann', title: '🍽️ 7pm — Dishes (load + wash)',                    frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
   { kid: 'Michael-ann', title: '🧹 Tidy kitchen',                                   frequency: 'weekly',          days_of_week: '0,1,3,5' },
-  { kid: 'Michael-ann', title: '🐾 Feed animals — evening',                         frequency: 'weekly',          days_of_week: '2,4,6' },
+  { kid: 'Michael-ann', title: '🐾 Evening — Feed animals',                         frequency: 'weekly',          days_of_week: '2,4,6' },
   { kid: 'Michael-ann', title: '🧼 Clean gerbil cages',                             frequency: 'interval',        days_of_week: '0,1,2,3,4,5,6', interval_days: 10, anchor_days_ago: 9 },
   { kid: 'Michael-ann', title: '💊 Dog meds — heartworm/flea/tick (her dog)',       frequency: 'interval',        days_of_week: '0,1,2,3,4,5,6', interval_days: 30, anchor_days_ago: 2 },
 
   // EMMA
   { kid: 'Emma', title: '🧹 Tidy kitchen',                                          frequency: 'weekly',          days_of_week: '2,4,6' },
-  { kid: 'Emma', title: '🐾 Feed animals — evening',                                frequency: 'weekly',          days_of_week: '0,1,3,5' },
-  { kid: 'Emma', title: '🍽️ Unload dishwasher + counter dishes — 9am',              frequency: 'weekly',          days_of_week: '0,1,3,5' },
-  { kid: 'Emma', title: '🍽️ Unload dishwasher + counter dishes — 7pm',              frequency: 'weekly',          days_of_week: '0,1,3,5' },
-  { kid: 'Emma', title: '🐹 Feed and water gerbils — 9am',                          frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Emma', title: '🐾 Evening — Feed animals',                                frequency: 'weekly',          days_of_week: '0,1,3,5' },
+  { kid: 'Emma', title: '🍽️ 9am — Unload dishwasher + counter dishes',              frequency: 'weekly',          days_of_week: '0,1,3,5' },
+  { kid: 'Emma', title: '🍽️ 7pm — Unload dishwasher + counter dishes',              frequency: 'weekly',          days_of_week: '0,1,3,5' },
+  { kid: 'Emma', title: '🐹 9am — Feed and water gerbils',                          frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
   { kid: 'Emma', title: '💊 Dog meds — heartworm/flea/tick (her dog)',              frequency: 'interval',        days_of_week: '0,1,2,3,4,5,6', interval_days: 30, anchor_days_ago: 2 },
 
   // PRESTON  — emoji prefixes to help him recognize chores by sight.
   // Dishwasher: 9am only on Saturday; 7pm on Tue/Thu/Sat. So Tue and Thu
   // are once-daily (7pm only) to lighten his load on those days.
-  { kid: 'Preston', title: '🍽️ Unload dishwasher + counter dishes — 9am',           frequency: 'weekly',          days_of_week: '6' },
-  { kid: 'Preston', title: '🍽️ Unload dishwasher + counter dishes — 7pm',           frequency: 'weekly',          days_of_week: '2,4,6' },
+  { kid: 'Preston', title: '🍽️ 9am — Unload dishwasher + counter dishes',           frequency: 'weekly',          days_of_week: '6' },
+  { kid: 'Preston', title: '🍽️ 7pm — Unload dishwasher + counter dishes',           frequency: 'weekly',          days_of_week: '2,4,6' },
   { kid: 'Preston', title: '🛋️ Tidy living room',                                   frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
-  { kid: 'Preston', title: '🐕 Feed and water dogs — 9am',                          frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
-  { kid: 'Preston', title: '🐕 Feed and water dogs — 6pm',                          frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Preston', title: '🐕 9am — Feed and water dogs',                          frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
+  { kid: 'Preston', title: '🐕 6pm — Feed and water dogs',                          frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
   { kid: 'Preston', title: '🐹 Feed and water gerbils',                             frequency: 'daily',           days_of_week: '0,1,2,3,4,5,6' },
 
   // MOM
