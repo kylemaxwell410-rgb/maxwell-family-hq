@@ -14,6 +14,7 @@ import PinModal from '../components/PinModal.jsx';
 import EditModeButton from '../components/EditModeButton.jsx';
 import QuickAddBar from '../components/QuickAddBar.jsx';
 import { useEditMode } from '../hooks/useEditMode.js';
+import { timeKey } from '../utils/choreSort.js';
 
 const FAVORITE_CHORES = ['Make bed', 'Homework', 'Tidy room', 'Feed pets'];
 
@@ -157,6 +158,10 @@ export default function Chores({ kids: allKids, onKidsChange }) {
     const map = {};
     for (const k of kids) map[k.id] = [];
     for (const c of chores) (map[c.kid_id] ||= []).push(c);
+    // Sort each kid's list chronologically by time-prefix; untimed chores fall to the bottom.
+    for (const id of Object.keys(map)) {
+      map[id].sort((a, b) => timeKey(a.title) - timeKey(b.title));
+    }
     return map;
   }, [chores, kids]);
 

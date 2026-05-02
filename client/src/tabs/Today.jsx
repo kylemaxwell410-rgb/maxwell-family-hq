@@ -8,6 +8,7 @@ import { factForToday } from '../utils/funFacts.js';
 import MiniGameCard from '../components/MiniGameCard.jsx';
 import QuickAddBar from '../components/QuickAddBar.jsx';
 import PinModal from '../components/PinModal.jsx';
+import { timeKey } from '../utils/choreSort.js';
 
 export default function Today({ kids: allKids, onKidsChange }) {
   const peopleForChores = useMemo(() => allKids.filter(k => k.role !== 'pet'), [allKids]);
@@ -116,6 +117,10 @@ export default function Today({ kids: allKids, onKidsChange }) {
     const map = {};
     for (const k of peopleForChores) map[k.id] = [];
     for (const c of chores) (map[c.kid_id] ||= []).push(c);
+    // Sort each kid's list by time-prefix (9am → 9pm → untimed at bottom).
+    for (const id of Object.keys(map)) {
+      map[id].sort((a, b) => timeKey(a.title) - timeKey(b.title));
+    }
     return map;
   }, [chores, peopleForChores]);
 
