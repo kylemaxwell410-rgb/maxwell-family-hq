@@ -1,32 +1,39 @@
-// Sort chores by time-of-day so a kid's column reads top-to-bottom in
-// chronological order: 8am, 9am, 12pm, 7pm, 9pm. Chores with no time
-// fall to the bottom (after all timed chores).
+// Sort chores into three blocks per kid column:
+//   1. AM-timed chores (8am, 9am, 11am…)  — sorted chronologically within
+//   2. Untimed chores (no time prefix)     — middle
+//   3. PM-timed chores (12pm, 7pm, 9pm…)   — sorted chronologically within
 //
 // The match key is the chore title with the leading emoji + space
 // stripped — e.g. '🐾 8am — Feed animals' → '8am — Feed animals' → 8am.
 
+const UNTIMED_BUCKET = 1000;  // anything between AM (0–660) and PM (>=2000)
+const PM_OFFSET      = 2000;
+
 export function timeKey(title) {
-  if (!title) return 9999;
+  if (!title) return UNTIMED_BUCKET;
   const s = title.replace(/^[^A-Za-z0-9]+/, '').trim();
 
-  // "9am", "12pm", etc.
+  // Numeric times like "9am", "12pm".
   const m = s.match(/^(\d{1,2})(am|pm)\b/i);
   if (m) {
-    let hour = parseInt(m[1], 10);
+    const hour = parseInt(m[1], 10);
     const ampm = m[2].toLowerCase();
-    if (ampm === 'am' && hour === 12) hour = 0;
-    if (ampm === 'pm' && hour !== 12) hour += 12;
-    return hour * 60;
+    if (ampm === 'am') {
+      // 12am → midnight (0). Otherwise hour stays in 0–11 range.
+      return (hour === 12 ? 0 : hour) * 60;
+    }
+    // pm: 12pm → noon (12). Otherwise add 12.
+    return PM_OFFSET + (hour === 12 ? 12 : hour + 12) * 60;
   }
 
-  // Common loose-time words.
-  if (/^morning/i.test(s)) return 8 * 60;     // ~8am
-  if (/^noon/i.test(s))    return 12 * 60;
-  if (/^afternoon/i.test(s)) return 14 * 60;  // ~2pm
-  if (/^evening/i.test(s)) return 18 * 60;    // ~6pm
-  if (/^night/i.test(s))   return 21 * 60;    // ~9pm
+  // Loose-time words. Morning is AM; afternoon/evening/night/noon are PM.
+  if (/^morning/i.test(s))   return 8 * 60;
+  if (/^noon/i.test(s))      return PM_OFFSET + 12 * 60;
+  if (/^afternoon/i.test(s)) return PM_OFFSET + 14 * 60;
+  if (/^evening/i.test(s))   return PM_OFFSET + 18 * 60;
+  if (/^night/i.test(s))     return PM_OFFSET + 21 * 60;
 
-  return 9999; // untimed — bottom
+  return UNTIMED_BUCKET; // no time → middle bucket
 }
 
 export function sortByTime(chores) {
