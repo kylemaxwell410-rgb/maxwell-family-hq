@@ -370,8 +370,8 @@ function LaundryCatchUpTile() {
 function MealsCard({ lunch, dinner }) {
   return (
     <div className="surface p-3 flex flex-col overflow-hidden">
-      <div className="text-xs lg:text-sm uppercase tracking-wider text-slate-400 font-semibold mb-2">Today's Meals</div>
-      <div className="flex-1 flex flex-col gap-3 justify-center">
+      <div className="text-sm lg:text-base uppercase tracking-wider text-slate-400 font-semibold mb-2">Today's Meals</div>
+      <div className="flex-1 flex flex-col gap-4 justify-center">
         <MealRow label="Lunch"  emoji="🥪" meal={lunch} />
         <MealRow label="Dinner" emoji="🍽️" meal={dinner} />
       </div>
@@ -384,25 +384,25 @@ function MealRow({ label, emoji, meal }) {
     ? `https://www.google.com/search?q=${encodeURIComponent(meal.description + ' recipe')}`
     : null;
   return (
-    <div className="flex flex-col gap-1">
-      <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">{label}</div>
+    <div className="flex flex-col gap-1.5">
+      <div className="text-xs lg:text-sm uppercase tracking-wider text-slate-500 font-semibold">{label}</div>
       {meal?.description ? (
-        <div className="flex items-start gap-2">
-          <span className="emoji text-lg leading-none flex-shrink-0">{emoji}</span>
+        <div className="flex items-start gap-2.5">
+          <span className="emoji text-3xl lg:text-4xl leading-none flex-shrink-0">{emoji}</span>
           <div className="flex-1 min-w-0">
-            <div className="text-sm lg:text-base font-bold leading-tight text-slate-900">{meal.description}</div>
+            <div className="text-xl lg:text-2xl font-extrabold leading-tight text-slate-900">{meal.description}</div>
             <a
               href={recipeUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-block mt-1 text-[11px] text-indigo-600 hover:text-indigo-500 font-semibold underline-offset-2 hover:underline"
+              className="inline-block mt-1.5 text-sm lg:text-base text-indigo-600 hover:text-indigo-500 font-bold underline-offset-2 hover:underline"
             >
               Recipe →
             </a>
           </div>
         </div>
       ) : (
-        <div className="text-slate-400 text-xs italic">Not planned — set on Meals tab</div>
+        <div className="text-slate-400 text-base italic">Not planned — set on Meals tab</div>
       )}
     </div>
   );
