@@ -4,12 +4,32 @@ import MemoryMatch from './games/MemoryMatch.jsx';
 import NumberGuess from './games/NumberGuess.jsx';
 import TicTacToe from './games/TicTacToe.jsx';
 import ColorSequence from './games/ColorSequence.jsx';
+import MathFlash from './games/MathFlash.jsx';
+import WordScramble from './games/WordScramble.jsx';
+import RockPaperScissors from './games/RockPaperScissors.jsx';
+import EmojiQuiz from './games/EmojiQuiz.jsx';
+import ReactionTap from './games/ReactionTap.jsx';
+import Hangman from './games/Hangman.jsx';
+import Trivia from './games/Trivia.jsx';
+import ConnectFour from './games/ConnectFour.jsx';
+import WordleLite from './games/WordleLite.jsx';
+import HigherLower from './games/HigherLower.jsx';
 
 const GAME_COMPONENTS = {
-  memory: MemoryMatch,
-  guess:  NumberGuess,
-  ttt:    TicTacToe,
-  simon:  ColorSequence,
+  memory:   MemoryMatch,
+  guess:    NumberGuess,
+  ttt:      TicTacToe,
+  simon:    ColorSequence,
+  math:     MathFlash,
+  scramble: WordScramble,
+  rps:      RockPaperScissors,
+  emoji:    EmojiQuiz,
+  reaction: ReactionTap,
+  hangman:  Hangman,
+  trivia:   Trivia,
+  c4:       ConnectFour,
+  wordle:   WordleLite,
+  hilo:     HigherLower,
 };
 
 export default function MiniGameCard({ now }) {
