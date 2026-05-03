@@ -16,7 +16,7 @@ export default function Today({ kids: allKids, onKidsChange }) {
   const [chores, setChores]               = useState([]);
   const [todayEvents, setTodayEvents]     = useState([]);
   const [tomorrowEvents, setTomorrowEvents] = useState([]);
-  const [meal, setMeal]                   = useState(null);
+  const [meals, setMeals]                 = useState({ lunch: null, dinner: null });
   const [weather, setWeather]             = useState(null);
   const [weatherErr, setWeatherErr]       = useState(null);
   const [settings, setSettings]           = useState({});
@@ -44,7 +44,10 @@ export default function Today({ kids: allKids, onKidsChange }) {
     setChores(c);
     setTodayEvents(eToday);
     setTomorrowEvents(eTomorrow);
-    setMeal((m || []).find(x => x.meal_type === 'dinner') || null);
+    setMeals({
+      lunch:  (m || []).find(x => x.meal_type === 'lunch')  || null,
+      dinner: (m || []).find(x => x.meal_type === 'dinner') || null,
+    });
     setSettings(s);
     setNotes(n);
     setStreaks(st);
@@ -150,7 +153,7 @@ export default function Today({ kids: allKids, onKidsChange }) {
           pinnedTop={now.getDay() === 0 ? <LaundryCatchUpTile /> : null}
         />
         <EventsCard title="Tomorrow's Events" events={sortedTomorrow} kids={allKids} />
-        <DinnerCard meal={meal} />
+        <MealsCard lunch={meals.lunch} dinner={meals.dinner} />
       </div>
 
       {/* Below the weather row: Coming Up | Next Vacation | Bedtime */}
@@ -362,30 +365,45 @@ function LaundryCatchUpTile() {
   );
 }
 
-/* =================== Dinner =================== */
+/* =================== Today's meals =================== */
 
-function DinnerCard({ meal }) {
+function MealsCard({ lunch, dinner }) {
+  return (
+    <div className="surface p-3 flex flex-col overflow-hidden">
+      <div className="text-xs lg:text-sm uppercase tracking-wider text-slate-400 font-semibold mb-2">Today's Meals</div>
+      <div className="flex-1 flex flex-col gap-3 justify-center">
+        <MealRow label="Lunch"  emoji="🥪" meal={lunch} />
+        <MealRow label="Dinner" emoji="🍽️" meal={dinner} />
+      </div>
+    </div>
+  );
+}
+
+function MealRow({ label, emoji, meal }) {
   const recipeUrl = meal?.description
     ? `https://www.google.com/search?q=${encodeURIComponent(meal.description + ' recipe')}`
     : null;
   return (
-    <div className="surface p-3 flex flex-col overflow-hidden">
-      <div className="text-xs lg:text-sm uppercase tracking-wider text-slate-400 font-semibold">Tonight's Dinner</div>
-      <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
-        {meal?.description ? (
-          <>
-            <div className="text-lg lg:text-xl font-extrabold leading-tight text-slate-900">
-              <span className="emoji">🍽️</span> {meal.description}
-            </div>
-            <a href={recipeUrl} target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold tap shadow-sm">
-              <span className="emoji">🍴</span> Click here for recipe
+    <div className="flex flex-col gap-1">
+      <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">{label}</div>
+      {meal?.description ? (
+        <div className="flex items-start gap-2">
+          <span className="emoji text-lg leading-none flex-shrink-0">{emoji}</span>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm lg:text-base font-bold leading-tight text-slate-900">{meal.description}</div>
+            <a
+              href={recipeUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block mt-1 text-[11px] text-indigo-600 hover:text-indigo-500 font-semibold underline-offset-2 hover:underline"
+            >
+              Recipe →
             </a>
-          </>
-        ) : (
-          <div className="text-slate-400 text-base">Not planned yet — set it on the Meals tab</div>
-        )}
-      </div>
+          </div>
+        </div>
+      ) : (
+        <div className="text-slate-400 text-xs italic">Not planned — set on Meals tab</div>
+      )}
     </div>
   );
 }
