@@ -20,8 +20,15 @@ SERVER_PID=$!
 
 sleep 1
 
-echo "[maxwell-hq] starting client on :5173"
-( cd client && npm run dev ) &
+echo "[maxwell-hq] building client (skipped if dist/ already up to date)…"
+if [ ! -d client/dist ] || [ -n "$(find client/src client/index.html client/package.json -newer client/dist 2>/dev/null)" ]; then
+  ( cd client && npm run build ) || { echo "[maxwell-hq] client build failed"; exit 1; }
+else
+  echo "[maxwell-hq] client/dist is current — skipping build"
+fi
+
+echo "[maxwell-hq] starting client (prod preview) on :5173"
+( cd client && npm run preview ) &
 CLIENT_PID=$!
 
 wait
