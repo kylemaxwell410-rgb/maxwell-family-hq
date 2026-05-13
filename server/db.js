@@ -43,7 +43,19 @@ async function openDb() {
   }
 }
 
-export const db = await openDb();
+let _db;
+try {
+  _db = await openDb();
+} catch (err) {
+  // Both better-sqlite3 AND node:sqlite failed (likely corrupted data.db,
+  // bad file permissions, or missing Node 22+). Log clearly and exit so
+  // systemd's restart log shows what's wrong instead of a stack trace loop.
+  console.error('[db] FATAL: could not open database at', DB_PATH);
+  console.error('[db]', err?.message || err);
+  console.error('[db] Backup or remove data.db, then restart. Service will keep crash-looping until fixed.');
+  process.exit(1);
+}
+export const db = _db;
 
 export function initSchema() {
   db.exec(`

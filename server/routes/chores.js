@@ -138,6 +138,15 @@ router.get('/', (req, res) => {
   res.json(withStatus);
 });
 
+// Returns the kid_id that should be credited on `date`: the override target
+// for that day if one exists, otherwise the chore's owning kid.
+function creditedKidId(chore, date) {
+  const ov = db.prepare(
+    'SELECT kid_id FROM chore_overrides WHERE chore_id = ? AND override_date = ?'
+  ).get(chore.id, date);
+  return ov?.kid_id || chore.kid_id;
+}
+
 // POST /api/chores/:id/complete { date? }
 router.post('/:id/complete', (req, res) => {
   const date = req.body?.date || todayStr();
@@ -149,6 +158,7 @@ router.post('/:id/complete', (req, res) => {
   ).get(chore.id, date);
   if (existing) return res.json({ ok: true, alreadyCompleted: true });
 
+  const creditKid = creditedKidId(chore, date);
   const now = new Date().toISOString();
   const tx = db.transaction(() => {
     db.prepare(
@@ -156,11 +166,11 @@ router.post('/:id/complete', (req, res) => {
     ).run(nanoid(), chore.id, date, now);
 
     db.prepare('UPDATE kids SET points_balance = points_balance + ? WHERE id = ?')
-      .run(chore.points, chore.kid_id);
+      .run(chore.points, creditKid);
 
     db.prepare(
       'INSERT INTO point_transactions (id, kid_id, amount, reason, created_at) VALUES (?, ?, ?, ?, ?)'
-    ).run(nanoid(), chore.kid_id, chore.points, `Completed: ${chore.title}`, now);
+    ).run(nanoid(), creditKid, chore.points, `Completed: ${chore.title}`, now);
   });
   tx();
 
@@ -178,14 +188,15 @@ router.post('/:id/uncomplete', (req, res) => {
   ).get(chore.id, date);
   if (!existing) return res.json({ ok: true, wasNotCompleted: true });
 
+  const creditKid = creditedKidId(chore, date);
   const now = new Date().toISOString();
   const tx = db.transaction(() => {
     db.prepare('DELETE FROM chore_completions WHERE id = ?').run(existing.id);
     db.prepare('UPDATE kids SET points_balance = points_balance - ? WHERE id = ?')
-      .run(chore.points, chore.kid_id);
+      .run(chore.points, creditKid);
     db.prepare(
       'INSERT INTO point_transactions (id, kid_id, amount, reason, created_at) VALUES (?, ?, ?, ?, ?)'
-    ).run(nanoid(), chore.kid_id, -chore.points, `Undo: ${chore.title}`, now);
+    ).run(nanoid(), creditKid, -chore.points, `Undo: ${chore.title}`, now);
   });
   tx();
 

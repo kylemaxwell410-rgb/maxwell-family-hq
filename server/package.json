@@ -14,7 +14,8 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.1",
-    "nanoid": "^5.0.7"
+    "nanoid": "^5.0.7",
+    "node-ical": "^0.26.1"
   },
   "optionalDependencies": {
     "better-sqlite3": "^11.10.0"

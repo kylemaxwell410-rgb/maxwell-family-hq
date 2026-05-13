@@ -1,12 +1,25 @@
 import { Router } from 'express';
 import { db, nanoid } from '../db.js';
+import { requirePin } from '../middleware/require-pin.js';
 
 const router = Router();
-const PIN = process.env.ADMIN_PIN || '1234';
-function requirePin(req, res, next) {
-  const sent = req.headers['x-admin-pin'] || req.body?.pin;
-  if (sent !== PIN) return res.status(401).json({ error: 'Invalid PIN' });
-  next();
+
+// Bot rate limiting — protects the billed Anthropic key from a kid spamming
+// the Ask button. Limits are global to the device (single-kiosk install).
+const RATE_WINDOW_MS = 60_000;
+const RATE_LIMIT_PER_MIN = 10;
+const DAILY_LIMIT = 200;
+const rate = { times: [], dayKey: '', dayCount: 0 };
+function checkBotRate() {
+  const now = Date.now();
+  const today = new Date().toISOString().slice(0, 10);
+  if (rate.dayKey !== today) { rate.dayKey = today; rate.dayCount = 0; }
+  rate.times = rate.times.filter(t => now - t < RATE_WINDOW_MS);
+  if (rate.dayCount >= DAILY_LIMIT) return { ok: false, error: `Daily limit reached (${DAILY_LIMIT}). Resets at midnight.` };
+  if (rate.times.length >= RATE_LIMIT_PER_MIN) return { ok: false, error: 'Too many questions in the last minute. Try again in a moment.' };
+  rate.times.push(now);
+  rate.dayCount += 1;
+  return { ok: true };
 }
 
 const SYSTEM_PROMPT = `Your name is Max. You are the friendly assistant on the Maxwell Family Planner
@@ -26,6 +39,9 @@ Rules:
 router.post('/ask', async (req, res) => {
   const { question, kid_name } = req.body || {};
   if (!question || !question.trim()) return res.status(400).json({ error: 'question required' });
+
+  const gate = checkBotRate();
+  if (!gate.ok) return res.status(429).json({ error: gate.error });
 
   const apiKey = db.prepare("SELECT value FROM settings WHERE key = 'anthropic_api_key'").get()?.value;
   if (!apiKey) {

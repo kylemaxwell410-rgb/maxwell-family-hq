@@ -54,7 +54,7 @@ export default function Admin({ kids, onKidsChange }) {
   }
   async function submitAdjust() {
     if (!adjust.kid_id || !adjust.amount) return;
-    await api.adjust(adjust.kid_id, Number(adjust.amount), adjust.reason || 'Manual adjustment');
+    await api.adjust(pin, adjust.kid_id, Number(adjust.amount), adjust.reason || 'Manual adjustment');
     setAdjust(null);
     await onKidsChange();
   }
@@ -386,6 +386,7 @@ function Modal({ children }) {
 function SettingsSection({ settings, onSave }) {
   const [bedtime, setBedtime] = useState(settings.bedtime || '20:45');
   const [apiKey, setApiKey]   = useState('');
+  const [gcalUrl, setGcalUrl] = useState('');
   const [weatherLat, setWeatherLat] = useState('');
   const [weatherLon, setWeatherLon] = useState('');
   const [weatherLabel, setWeatherLabel] = useState('');
@@ -451,6 +452,28 @@ function SettingsSection({ settings, onSave }) {
           </div>
           <p className="text-xs text-slate-500 mt-1">
             {settings.anthropic_api_key ? 'A key is saved. Bot is enabled.' : 'No key saved — the Ask Claude tile is disabled.'}
+          </p>
+        </div>
+
+        <div className="border-t border-slate-200 pt-5">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+            Google Calendar (read-only ICS feed URL)
+          </label>
+          <div className="flex gap-2 items-center">
+            <input
+              type="password"
+              className="input flex-1 max-w-[640px]"
+              placeholder={settings.gcal_ics_url ? 'Saved · enter a new URL to replace' : 'https://calendar.google.com/calendar/ical/.../basic.ics'}
+              value={gcalUrl}
+              onChange={e => setGcalUrl(e.target.value)} />
+            <button onClick={async () => { await onSave('gcal_ics_url', gcalUrl); setGcalUrl(''); }}
+              disabled={!gcalUrl}
+              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg font-semibold tap">Save</button>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            {settings.gcal_ics_url
+              ? 'Feed saved. Calendar events appear with a "G" badge.'
+              : 'Google Calendar → Settings → Integrate calendar → Secret address in iCal format.'}
           </p>
         </div>
 

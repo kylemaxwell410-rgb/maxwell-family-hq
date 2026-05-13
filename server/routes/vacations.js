@@ -1,13 +1,8 @@
 import { Router } from 'express';
 import { db, nanoid } from '../db.js';
+import { requirePin } from '../middleware/require-pin.js';
 
 const router = Router();
-const PIN = process.env.ADMIN_PIN || '1234';
-function requirePin(req, res, next) {
-  const sent = req.headers['x-admin-pin'] || req.body?.pin;
-  if (sent !== PIN) return res.status(401).json({ error: 'Invalid PIN' });
-  next();
-}
 
 // Public read — list everything in start-date order (the client filters
 // to "still upcoming or in-progress" itself).

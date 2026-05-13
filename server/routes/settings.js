@@ -1,18 +1,12 @@
 import { Router } from 'express';
 import { db } from '../db.js';
+import { requirePin } from '../middleware/require-pin.js';
 
 const router = Router();
 
-const PIN = process.env.ADMIN_PIN || '1234';
-function requirePin(req, res, next) {
-  const sent = req.headers['x-admin-pin'] || req.body?.pin;
-  if (sent !== PIN) return res.status(401).json({ error: 'Invalid PIN' });
-  next();
-}
-
 // Keys whose value is sensitive — replace with a boolean flag so the client
 // can show "saved" / "not saved" without leaking the secret.
-const SECRET_KEYS = new Set(['anthropic_api_key']);
+const SECRET_KEYS = new Set(['anthropic_api_key', 'gcal_ics_url']);
 
 router.get('/', (_req, res) => {
   const rows = db.prepare('SELECT key, value FROM settings').all();

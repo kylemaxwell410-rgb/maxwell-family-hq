@@ -31,7 +31,7 @@ export default function Today({ kids: allKids, onKidsChange }) {
     const todayEnd = endOfDay(new Date());
     const tomorrow    = startOfDay(addDays(new Date(), 1));
     const tomorrowEnd = endOfDay(addDays(new Date(), 1));
-    const [c, eToday, eTomorrow, m, s, n, st, v] = await Promise.all([
+    const [c, eToday, eTomorrow, m, s, n, st, v, ext] = await Promise.all([
       api.chores(dStr),
       api.events(today.toISOString(), todayEnd.toISOString()),
       api.events(tomorrow.toISOString(), tomorrowEnd.toISOString()),
@@ -40,10 +40,25 @@ export default function Today({ kids: allKids, onKidsChange }) {
       api.notes(),
       api.streaks(),
       api.vacations(),
+      // Pull Google Calendar (or any ICS feed) covering today + tomorrow. Quietly
+      // returns no events if the URL isn't configured in Admin → Settings.
+      api.externalEvents(today.toISOString(), tomorrowEnd.toISOString()).catch(() => ({ events: [] })),
     ]);
     setChores(c);
-    setTodayEvents(eToday);
-    setTomorrowEvents(eTomorrow);
+    const todayMs    = today.getTime();
+    const todayEndMs = todayEnd.getTime();
+    const tomorrowEndMs = tomorrowEnd.getTime();
+    const extEvents = ext?.events || [];
+    const extToday    = extEvents.filter(e => {
+      const t = new Date(e.start_datetime).getTime();
+      return t >= todayMs && t <= todayEndMs;
+    });
+    const extTomorrow = extEvents.filter(e => {
+      const t = new Date(e.start_datetime).getTime();
+      return t > todayEndMs && t <= tomorrowEndMs;
+    });
+    setTodayEvents([...eToday, ...extToday]);
+    setTomorrowEvents([...eTomorrow, ...extTomorrow]);
     setMeals({
       lunch:  (m || []).find(x => x.meal_type === 'lunch')  || null,
       dinner: (m || []).find(x => x.meal_type === 'dinner') || null,
@@ -286,7 +301,18 @@ function precipSuffix(inches) {
 
 function ForecastDay({ day, index, size = 'sm' }) {
   const desc = describeCode(day.code);
-  const label = index === 0 ? 'TODAY' : index === 1 ? 'TMRW' :
+  // Label by actual date relative to today's real local date, not by array
+  // index — otherwise a stale cache or midnight rollover labels yesterday as
+  // "TODAY" while subsequent tiles show real day names (Sun, Mon...).
+  const today = todayStr();
+  const tomorrow = (() => {
+    const d = new Date(today + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  })();
+  const label =
+    day.date === today    ? 'TODAY' :
+    day.date === tomorrow ? 'TMRW'  :
     fmtDayOfWeek(day.date + 'T12:00:00').toUpperCase();
   if (size === 'lg') {
     // Big tile (top row): vertical stack — day label, emoji, hi/lo, rain.

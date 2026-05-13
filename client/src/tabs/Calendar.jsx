@@ -47,7 +47,11 @@ export default function Calendar({ kids }) {
 
   async function load() {
     const [from, to] = range;
-    setEvents(await api.events(from.toISOString(), to.toISOString()));
+    const [local, ext] = await Promise.all([
+      api.events(from.toISOString(), to.toISOString()),
+      api.externalEvents(from.toISOString(), to.toISOString()).catch(() => ({ events: [] })),
+    ]);
+    setEvents([...local, ...(ext?.events || [])]);
   }
   useEffect(() => { load(); }, [view]);
 
@@ -202,18 +206,27 @@ function DaySection({ date, events, kidMap, onEdit }) {
 }
 
 function EventCard({ event, kid, onEdit }) {
-  const stripe = kid ? kid.color : '#334155';
-  const bg     = kid ? kid.color + '1a' : '#1e293b33';
+  // External (Google Calendar) events are read-only; tapping them is a no-op
+  // since they can't be edited from the kiosk. Show a "G" badge to make clear
+  // where they come from.
+  const external = !!event.external;
+  const stripe = external ? '#94a3b8' : (kid ? kid.color : '#334155');
+  const bg     = external ? '#f1f5f9' : (kid ? kid.color + '1a' : '#1e293b33');
   return (
     <button
-      onClick={() => onEdit(event)}
-      className="group text-left flex gap-3 rounded-2xl border border-slate-200 p-4 tap hover:border-slate-300 transition"
+      onClick={external ? undefined : () => onEdit(event)}
+      disabled={external}
+      className={`group text-left flex gap-3 rounded-2xl border border-slate-200 p-4 tap transition
+        ${external ? 'cursor-default' : 'hover:border-slate-300'}`}
       style={{ background: bg }}
     >
       <div className="w-1.5 self-stretch rounded-full" style={{ background: stripe }} />
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2 mb-0.5">
           <div className="text-lg font-semibold truncate">{event.title}</div>
+          {external && (
+            <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 bg-white border border-slate-300 rounded px-1.5 py-0.5 flex-shrink-0">G</span>
+          )}
         </div>
         <div className="flex items-center gap-2 text-sm text-slate-700">
           <span className="tabular-nums font-medium">{fmtTime(event.start_datetime, event.all_day)}</span>
@@ -221,6 +234,12 @@ function EventCard({ event, kid, onEdit }) {
             <>
               <span className="text-slate-600">·</span>
               <span className="font-medium" style={{ color: kid.color }}>{kid.name}</span>
+            </>
+          )}
+          {event.location && (
+            <>
+              <span className="text-slate-600">·</span>
+              <span className="text-slate-500 truncate">{event.location}</span>
             </>
           )}
         </div>

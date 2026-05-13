@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
+import PinModal from '../components/PinModal.jsx';
 
 export default function Points({ kids: allKids, onKidsChange }) {
   const kids = allKids.filter(k => k.role === 'kid');
@@ -7,6 +8,7 @@ export default function Points({ kids: allKids, onKidsChange }) {
   const [txns, setTxns] = useState([]);
   const [selectedKid, setSelectedKid] = useState(null);
   const [confirming, setConfirming] = useState(null);
+  const [pinPrompt, setPinPrompt] = useState(null); // { kid, reward }
 
   async function load() {
     const [r, t] = await Promise.all([api.rewards(), api.transactions()]);
@@ -15,10 +17,11 @@ export default function Points({ kids: allKids, onKidsChange }) {
   }
   useEffect(() => { load(); }, []);
 
-  async function redeem(kid, reward) {
+  async function redeem(kid, reward, pin) {
     try {
-      await api.redeem(kid.id, reward.id);
+      await api.redeem(pin, kid.id, reward.id);
       setConfirming(null);
+      setPinPrompt(null);
       await load();
       onKidsChange?.();
     } catch (e) {
@@ -128,13 +131,20 @@ export default function Points({ kids: allKids, onKidsChange }) {
               Spend <span className="font-bold text-slate-900">{confirming.cost} points</span> for <span className="font-bold text-slate-900">{confirming.label}</span>.
             </p>
             <div className="flex gap-2">
-              <button onClick={() => redeem(allKids.find(k => k.id === selectedKid), confirming)}
+              <button onClick={() => setPinPrompt({ kid: allKids.find(k => k.id === selectedKid), reward: confirming })}
                 className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold tap">Confirm</button>
               <button onClick={() => setConfirming(null)}
                 className="px-6 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-semibold tap">Cancel</button>
             </div>
           </div>
         </div>
+      )}
+
+      {pinPrompt && (
+        <PinModal
+          onVerified={(pin) => redeem(pinPrompt.kid, pinPrompt.reward, pin)}
+          onCancel={() => setPinPrompt(null)}
+        />
       )}
     </div>
   );

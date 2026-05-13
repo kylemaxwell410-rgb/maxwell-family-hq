@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { db, nanoid } from '../db.js';
+import { requirePin } from '../middleware/require-pin.js';
 
 const router = Router();
 
@@ -28,8 +29,8 @@ router.get('/transactions', (req, res) => {
   res.json(rows);
 });
 
-// POST /api/points/redeem  { kid_id, reward_id }
-router.post('/redeem', (req, res) => {
+// POST /api/points/redeem  { kid_id, reward_id }  (parent-gated)
+router.post('/redeem', requirePin, (req, res) => {
   const { kid_id, reward_id } = req.body || {};
   if (!kid_id || !reward_id) return res.status(400).json({ error: 'kid_id and reward_id required' });
   const kid = db.prepare('SELECT * FROM kids WHERE id = ?').get(kid_id);
@@ -52,7 +53,7 @@ router.post('/redeem', (req, res) => {
 });
 
 // POST /api/points/adjust  { kid_id, amount, reason }  (admin)
-router.post('/adjust', (req, res) => {
+router.post('/adjust', requirePin, (req, res) => {
   const { kid_id, amount, reason } = req.body || {};
   if (!kid_id || typeof amount !== 'number') {
     return res.status(400).json({ error: 'kid_id and amount required' });

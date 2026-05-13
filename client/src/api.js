@@ -34,6 +34,7 @@ export const api = {
     const q = from && to ? `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}` : '';
     return req(`/events${q}`);
   },
+  externalEvents: (from, to) => req(`/external-calendar?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
   createEvent: (body) => req('/events', { method: 'POST', body: JSON.stringify(body) }),
   updateEvent: (id, body) => req(`/events/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   deleteEvent: (id) => req(`/events/${id}`, { method: 'DELETE' }),
@@ -52,11 +53,11 @@ export const api = {
   // points
   rewards: () => req('/points/rewards'),
   transactions: (kidId) => req(`/points/transactions${kidId ? `?kid_id=${kidId}` : ''}`),
-  redeem: (kid_id, reward_id) => req('/points/redeem', {
-    method: 'POST', body: JSON.stringify({ kid_id, reward_id }),
+  redeem: (pin, kid_id, reward_id) => req('/points/redeem', {
+    method: 'POST', headers: { 'x-admin-pin': pin }, body: JSON.stringify({ kid_id, reward_id }),
   }),
-  adjust: (kid_id, amount, reason) => req('/points/adjust', {
-    method: 'POST', body: JSON.stringify({ kid_id, amount, reason }),
+  adjust: (pin, kid_id, amount, reason) => req('/points/adjust', {
+    method: 'POST', headers: { 'x-admin-pin': pin }, body: JSON.stringify({ kid_id, amount, reason }),
   }),
 
   // admin
