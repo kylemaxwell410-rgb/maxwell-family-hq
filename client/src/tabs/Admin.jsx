@@ -217,19 +217,41 @@ function daysLabel(dow) {
   return DOW.map((d, i) => set.has(i) ? d : '·').join(' ');
 }
 
+const FREQUENCIES = [
+  { id: 'daily',           label: 'Daily',           help: 'Repeats every selected day of the week.' },
+  { id: 'alternate_daily', label: 'Alternate daily', help: 'Flip-flops between selected kids every day, ignoring weekdays.' },
+  { id: 'weekly',          label: 'Weekly',          help: 'Same as daily — shown only on selected weekdays.' },
+  { id: 'weekly_rolling',  label: 'Weekly rolling',  help: 'Appears on its weekday, then stays visible until completed.' },
+  { id: 'interval',        label: 'Every N days',    help: 'Recurs every N days from the last completion.' },
+  { id: 'one_time',        label: 'One time',        help: 'Disappears the day after it\'s completed.' },
+];
+
 function ChoreModal({ chore, kids, onSave, onDelete, onClose }) {
+  // Only kid-role members can rotate; parents are excluded from the picker.
+  const rotatableKids = kids.filter(k => (k.role || 'kid') === 'kid');
   const [f, setF] = useState({
     kid_id: chore.kid_id, title: chore.title, points: chore.points,
     frequency: chore.frequency || 'daily',
     days_of_week: chore.days_of_week || '0,1,2,3,4,5,6',
     active: chore.active ?? 1, sort_order: chore.sort_order ?? 0,
     notes: chore.notes ?? '',
+    alternate_kids: chore.alternate_kids || '',
+    interval_days: chore.interval_days ?? '',
   });
   const daySet = new Set(f.days_of_week.split(',').filter(Boolean).map(Number));
   function toggleDay(i) {
     if (daySet.has(i)) daySet.delete(i); else daySet.add(i);
     setF({ ...f, days_of_week: [...daySet].sort((a,b)=>a-b).join(',') });
   }
+  const altSet = new Set(f.alternate_kids.split(',').map(s => s.trim()).filter(Boolean));
+  function toggleAltKid(id) {
+    if (altSet.has(id)) altSet.delete(id); else altSet.add(id);
+    setF({ ...f, alternate_kids: [...altSet].join(',') });
+  }
+  const showDays     = ['daily','weekly','weekly_rolling'].includes(f.frequency);
+  const showAltKids  = f.frequency === 'alternate_daily';
+  const showInterval = f.frequency === 'interval';
+  const freqMeta = FREQUENCIES.find(x => x.id === f.frequency);
   return (
     <Modal>
       <h3 className="text-xl font-bold mb-4">{chore.id ? 'Edit chore' : 'New chore'}</h3>
@@ -252,15 +274,52 @@ function ChoreModal({ chore, kids, onSave, onDelete, onClose }) {
               onChange={e => setF({ ...f, sort_order: Number(e.target.value) })} />
           </FieldRow>
         </div>
-        <FieldRow label="Days of week">
-          <div className="flex gap-1">
-            {DOW.map((d, i) => (
-              <button key={i} onClick={() => toggleDay(i)}
-                className={`w-11 h-11 rounded-lg font-bold tap
-                  ${daySet.has(i) ? 'bg-emerald-600' : 'bg-slate-100 hover:bg-slate-200'}`}>{d}</button>
-            ))}
-          </div>
+        <FieldRow label="Frequency">
+          <select className="input" value={f.frequency}
+            onChange={e => setF({ ...f, frequency: e.target.value })}>
+            {FREQUENCIES.map(opt => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
+          </select>
+          <p className="text-xs text-slate-500 mt-1">{freqMeta?.help}</p>
         </FieldRow>
+        {showDays && (
+          <FieldRow label="Days of week">
+            <div className="flex gap-1">
+              {DOW.map((d, i) => (
+                <button key={i} onClick={() => toggleDay(i)}
+                  className={`w-11 h-11 rounded-lg font-bold tap
+                    ${daySet.has(i) ? 'bg-emerald-600' : 'bg-slate-100 hover:bg-slate-200'}`}>{d}</button>
+              ))}
+            </div>
+          </FieldRow>
+        )}
+        {showAltKids && (
+          <FieldRow label="Rotate between (pick 2 or more)">
+            <div className="flex flex-wrap gap-2">
+              {rotatableKids.map(k => {
+                const on = altSet.has(k.id);
+                return (
+                  <button key={k.id} type="button" onClick={() => toggleAltKid(k.id)}
+                    className={`px-4 py-2 rounded-full text-sm font-semibold tap border transition
+                      ${on ? 'text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+                    style={on ? { background: k.color, borderColor: k.color } : { borderColor: '#e5e7eb' }}>
+                    {k.name}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Order: {altSet.size === 0 ? 'pick at least 2 kids' :
+                rotatableKids.filter(k => altSet.has(k.id)).map(k => k.name).join(' → ') + ' → repeat'}
+            </p>
+          </FieldRow>
+        )}
+        {showInterval && (
+          <FieldRow label="Repeat every (days)">
+            <input type="number" min="1" className="input max-w-[120px]"
+              value={f.interval_days}
+              onChange={e => setF({ ...f, interval_days: e.target.value })} />
+          </FieldRow>
+        )}
         <FieldRow label="Notes (tap-to-view detail)">
           <textarea
             className="input min-h-[80px]"
