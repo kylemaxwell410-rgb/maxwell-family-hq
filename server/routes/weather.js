@@ -35,13 +35,44 @@ async function getPoints(lat, lon) {
   });
   if (!r.ok) throw new Error(`NWS points ${r.status}`);
   const data = await r.json();
+  // Build the raw-gridpoint URL — we need it for precipitation amounts since
+  // the standard /forecast endpoint only gives probability, not mm/inches.
+  const gp = data.properties.gridId && data.properties.gridX != null && data.properties.gridY != null
+    ? `https://api.weather.gov/gridpoints/${data.properties.gridId}/${data.properties.gridX},${data.properties.gridY}`
+    : null;
   const out = {
     forecast: data.properties.forecast,
+    gridpoint: gp,
     observationStations: data.properties.observationStations,
     timeZone: data.properties.timeZone,
   };
   pointsCache.set(key, { at: Date.now(), data: out });
   return out;
+}
+
+// NWS quantitativePrecipitation values are in mm over a period. Sum per local
+// date so each ForecastDay tile can show inches of expected rainfall.
+async function fetchPrecipByDate(gridpointUrl) {
+  if (!gridpointUrl) return {};
+  const r = await fetch(gridpointUrl, {
+    headers: { 'User-Agent': NWS_UA, Accept: 'application/geo+json' },
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!r.ok) throw new Error(`NWS gridpoint ${r.status}`);
+  const data = await r.json();
+  const values = data.properties?.quantitativePrecipitation?.values || [];
+  const byDate = {}; // YYYY-MM-DD → mm
+  for (const v of values) {
+    if (v.value == null) continue;
+    // validTime looks like "2026-05-12T20:00:00+00:00/PT6H" — date prefix is enough.
+    const startIso = v.validTime.split('/')[0];
+    const dateKey = new Date(startIso).toLocaleDateString('en-CA'); // YYYY-MM-DD in local TZ
+    byDate[dateKey] = (byDate[dateKey] || 0) + v.value;
+  }
+  // mm → inches
+  const inchesByDate = {};
+  for (const [d, mm] of Object.entries(byDate)) inchesByDate[d] = mm / 25.4;
+  return inchesByDate;
 }
 
 async function nearestStationId(stationsUrl) {
@@ -136,9 +167,10 @@ function groupPeriodsByDate(periods) {
 
 async function fetchNws(lat, lon) {
   const points = await getPoints(lat, lon);
-  const [periods, stationId] = await Promise.all([
+  const [periods, stationId, precipByDate] = await Promise.all([
     fetchForecastPeriods(points.forecast),
     nearestStationId(points.observationStations).catch(() => null),
+    fetchPrecipByDate(points.gridpoint).catch(() => ({})),
   ]);
   let obs = null;
   if (stationId) {
@@ -155,7 +187,7 @@ async function fetchNws(lat, lon) {
       g.day?.probabilityOfPrecipitation?.value   ?? 0,
       g.night?.probabilityOfPrecipitation?.value ?? 0,
     )),
-    precipitation_sum: grouped.map(() => null), // NWS forecast endpoint doesn't include amount
+    precipitation_sum: grouped.map(g => precipByDate[g.date] ?? null),
     sunrise:           grouped.map(() => null),
     sunset:            grouped.map(() => null),
   };

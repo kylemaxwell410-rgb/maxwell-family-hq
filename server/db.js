@@ -196,6 +196,16 @@ export function initSchema() {
     console.log('[db] added notes column to chores');
   }
 
+  // Idempotent migration: alternate_kids on chores (TEXT, nullable).
+  // CSV of kid_ids that rotate ownership when frequency = 'alternate_daily'.
+  // Pick today's owner with: alternate_kids[ daysSinceEpoch % length ].
+  try {
+    db.prepare('SELECT alternate_kids FROM chores LIMIT 1').get();
+  } catch {
+    db.exec('ALTER TABLE chores ADD COLUMN alternate_kids TEXT');
+    console.log('[db] added alternate_kids column to chores');
+  }
+
   // Family notes
   db.exec(`
     CREATE TABLE IF NOT EXISTS family_notes (

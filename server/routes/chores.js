@@ -15,6 +15,17 @@ function daysBetween(aStr, bStr) {
   return Math.round(ms / 86400000);
 }
 
+// For `alternate_daily` chores: pick today's rotational owner by date,
+// independent of weekday so the swap continues across week boundaries.
+function alternateOwnerId(altCsv, dateStr) {
+  if (!altCsv) return null;
+  const ids = altCsv.split(',').map(s => s.trim()).filter(Boolean);
+  if (!ids.length) return null;
+  // Days-since-epoch in local time of the queried date — stable for the day.
+  const days = Math.floor(new Date(dateStr + 'T12:00:00').getTime() / 86400000);
+  return ids[((days % ids.length) + ids.length) % ids.length];
+}
+
 // GET /api/chores?date=YYYY-MM-DD   -> chores with today's completion status
 router.get('/', (req, res) => {
   const date = req.query.date || todayStr();
@@ -26,6 +37,24 @@ router.get('/', (req, res) => {
     WHERE c.active = 1
     ORDER BY k.sort_order, c.sort_order
   `).all();
+
+  // `alternate_daily` rotation: rewrite the chore's effective owner for this
+  // date BEFORE overrides apply, so an explicit drag-override still wins.
+  const kidById = new Map(
+    db.prepare('SELECT id, name, color, initials FROM kids').all().map(k => [k.id, k])
+  );
+  for (const c of chores) {
+    if (c.frequency === 'alternate_daily' && c.alternate_kids) {
+      const owner = alternateOwnerId(c.alternate_kids, date);
+      const k = owner ? kidById.get(owner) : null;
+      if (k) {
+        c.kid_id = k.id;
+        c.kid_name = k.name;
+        c.kid_color = k.color;
+        c.kid_initials = k.initials;
+      }
+    }
+  }
 
   // One-day overrides: tweak chore.kid_id/kid_name/kid_color/kid_initials for
   // chores that were drag-and-dropped onto a different kid for today only.
@@ -82,7 +111,20 @@ router.get('/', (req, res) => {
     let include = false;
     let overdue_days = 0;
 
-    if (c.frequency === 'interval' && c.interval_days) {
+    if (c.frequency === 'one_time') {
+      // Custom one-shot chore (quick-add default). Visible until completed once,
+      // then it disappears the next day so it doesn't keep nagging.
+      if (completed) {
+        include = true; // show today's "All done" state
+      } else {
+        const last = lastCompletionStmt.get(c.id, date)?.d;
+        include = !last; // any prior completion → never appear again
+      }
+    } else if (c.frequency === 'alternate_daily') {
+      // Flip-flop ownership every day, regardless of weekday. Always shown
+      // for that day's rotational owner.
+      include = true;
+    } else if (c.frequency === 'interval' && c.interval_days) {
       // Keep an interval chore visible on the day it's completed so the
       // parent sees the "All done" state instead of an empty column.
       if (completed) {
@@ -138,13 +180,19 @@ router.get('/', (req, res) => {
   res.json(withStatus);
 });
 
-// Returns the kid_id that should be credited on `date`: the override target
-// for that day if one exists, otherwise the chore's owning kid.
+// Returns the kid_id that should be credited on `date`. Priority:
+//   1. Explicit drag-and-drop override for this date
+//   2. Rotational owner if the chore is `alternate_daily`
+//   3. The chore's owning kid_id
 function creditedKidId(chore, date) {
   const ov = db.prepare(
     'SELECT kid_id FROM chore_overrides WHERE chore_id = ? AND override_date = ?'
   ).get(chore.id, date);
-  return ov?.kid_id || chore.kid_id;
+  if (ov?.kid_id) return ov.kid_id;
+  if (chore.frequency === 'alternate_daily') {
+    return alternateOwnerId(chore.alternate_kids, date) || chore.kid_id;
+  }
+  return chore.kid_id;
 }
 
 // POST /api/chores/:id/complete { date? }

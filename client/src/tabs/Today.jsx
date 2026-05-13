@@ -113,7 +113,10 @@ export default function Today({ kids: allKids, onKidsChange }) {
     if (!t) return;
     async function doIt(p) {
       try {
-        await api.createChore(p, { kid_id, title: t });
+        // Quick-add from Today is for ad-hoc one-shot tasks ("take out trash bag",
+        // "wash the car"). The chore vanishes from the list the day after it's
+        // checked. Recurring chores still come from Admin → Chores.
+        await api.createChore(p, { kid_id, title: t, frequency: 'one_time' });
         await loadEverything();
         onKidsChange?.();
       } catch (err) {
