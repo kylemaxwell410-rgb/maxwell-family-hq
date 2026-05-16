@@ -152,6 +152,16 @@ function obsWindMph(obs) {
   return w.value;
 }
 
+// NWS only returns *future* periods. Once today's daytime period has ended
+// (after sunset, roughly), today's group has only a night entry, and our
+// `temperature_2m_max` lookup falls through to the overnight low — so the
+// kiosk shows today's "high" as ~65°F. Detect that case so a caller can
+// supplement today's high from Open-Meteo.
+export function todayNeedsHighSupplement(grouped) {
+  const today = grouped[0];
+  return !!(today && !today.day && today.night);
+}
+
 // Group day+night NWS periods into one daily entry per local date.
 function groupPeriodsByDate(periods) {
   const byDate = new Map();
@@ -209,6 +219,20 @@ async function fetchNws(lat, lon) {
     is_day:         !!activePeriod?.isDaytime,
     wind_speed_10m: obsWind != null ? obsWind : 0,
   };
+
+  // After-sunset patch: if NWS dropped today's day period, today's high is the
+  // overnight low. Pull today's max from Open-Meteo so the kiosk stays sane.
+  if (todayNeedsHighSupplement(grouped)) {
+    try {
+      const om = await fetchOpenMeteoFallback(lat, lon, points.timeZone || 'America/New_York');
+      const omIdx = om.daily?.time?.indexOf(grouped[0].date);
+      if (omIdx != null && omIdx >= 0 && om.daily.temperature_2m_max?.[omIdx] != null) {
+        daily.temperature_2m_max[0] = om.daily.temperature_2m_max[omIdx];
+      }
+    } catch (e) {
+      console.error('[weather] today-high supplement failed:', e.message);
+    }
+  }
 
   return { current, daily, source: 'nws' };
 }
