@@ -105,14 +105,14 @@ export default function Chores({ kids: allKids, onKidsChange }) {
     if (!t) return;
     await withPin(async (p) => {
       try {
-        await api.createChore(p, { kid_id, title: t });
+        await api.createChore(p, { kid_id, title: t, frequency: 'one_time' });
         await loadAll();
         onKidsChange?.();
       } catch (err) {
         if (/PIN/i.test(err.message)) {
           localStorage.removeItem('admin_pin');
           setPin(null);
-          pendingAction.current = (np) => api.createChore(np, { kid_id, title: t })
+          pendingAction.current = (np) => api.createChore(np, { kid_id, title: t, frequency: 'one_time' })
             .then(() => loadAll()).then(() => onKidsChange?.());
           setPinPrompt(true);
         } else {
